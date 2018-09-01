@@ -228,7 +228,6 @@ void BuildContainer::BFS(int chunk_id, int caller_idx)
 	while (!bfsMainStack->empty() && !getChunkingFinish()) {
 		bfsMainStack = &breadthSearch(chunk_id, *bfsMainStack);
 	}
-
 	return;
 }
 
@@ -246,14 +245,12 @@ vector<int>& BuildContainer::breadthSearch(int chunk_id, vector<int>& main_stack
 			cursor.setChunkID(chunk_id);
 			chunkingCnt++;
 
-
 			if (getChunkingPhase())
 				bufferChunkPositive.at(chunk_id - 1).push_back(cursor.unitIdx);
 			else
 				bufferChunkNegative.at(-(chunk_id + 1)).push_back(cursor.unitIdx);
 
-
-			//묶음분류(chunking)에 성공 할 때마다, 카운트 업
+			//묶음분류(chunking)에 성공 할 때마다, 카운트 업. 모든 분류 시 loop 탈출
 			if (chunkingCnt >= getAliveUnitCnt()) {
 				chunkingFinishFlag = true;
 				break;
@@ -269,7 +266,6 @@ vector<int>& BuildContainer::breadthSearch(int chunk_id, vector<int>& main_stack
 
 	if (!main_stack.empty())
 		main_stack.clear();
-
 	vector<int>& next_main_stack = *bfsSubStack;
 	bfsSubStack = &main_stack;
 

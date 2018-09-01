@@ -43,12 +43,9 @@ protected:
 public:
 
 	BlockUnit();	
-	BlockUnit(const BlockUnit& blk) {
-		//CCLOG("copy constructor!!");
-	};
+	BlockUnit(const BlockUnit& blk) {};
 	
-	virtual ~BlockUnit() 
-	{
+	virtual ~BlockUnit() {
 		//CCLOG("Block unit : I'm dying!!");
 	};
 

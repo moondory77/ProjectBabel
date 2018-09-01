@@ -7,14 +7,10 @@
 USING_NS_CC;
 
 enum InputBitType {
-	TOUCH = 0,
-	SWIPE = 1,
-	RIGHT = 0,
-	LEFT = 1,
-	UP = 1,
-	DOWN = 2
+	TOUCH = 0, SWIPE = 1,
+	RIGHT = 0, LEFT = 1,
+	UP = 1, DOWN = 2
 };
-
 
 class JoyController : public Layer
 {
@@ -44,7 +40,7 @@ private:
 	bool isTouchedSpc = false;
 
 	bool isZoomIn = false;
-	
+
 	float velocity;
 	bool isControllerShow;
 	bool isLimitScreen;
@@ -58,9 +54,9 @@ private:
 	Point initDefensePos;
 	Point initJumpPos;
 	Point initMovePos;
-	
+
 	//min, max
-	pair<float, float> marginAtkRot = {0, 0};	
+	pair<float, float> marginAtkRot = { 0, 0 };
 	float curAtkRot;
 
 	Point curDefensePos;
@@ -80,14 +76,11 @@ private:
 public:
 
 	JoyController() {};
-	~JoyController() ;
+	~JoyController();
 
-	virtual bool init();
-	virtual void onEnter();
-
+	bool init();
+	void onEnter();
 	void update(float dt);
-
-
 
 
 	void setCanvas(Layer* canvas) { this->canvas = canvas; }
@@ -113,7 +106,6 @@ public:
 	void activateBtnDefense();
 	void activateBtnSpc();
 
-
 	//void inActivateBtnLeft();
 	//void inActivateBtnRight();
 	void inActivateBtnJump();
@@ -121,7 +113,7 @@ public:
 	void inActivateBtnDefense();
 	void inActivateBtnSpc();
 
-
+	//리스너 등록 타겟이 터치되었는지 여부 리턴
 	bool isListenerTargetTouched(Touch* touch, Event* unused_event);
 
 	EventListenerTouchOneByOne * listener_Move;
@@ -149,8 +141,6 @@ public:
 	virtual void onTouchMoved_Defense(Touch* touch, Event* unused_event);
 	virtual void onTouchEnded_Defense(Touch* touch, Event* unused_event);
 	virtual void onTouchCancelled_Defense(Touch* touch, Event* unused_event);
-
-
 
 
 	CREATE_FUNC(JoyController);

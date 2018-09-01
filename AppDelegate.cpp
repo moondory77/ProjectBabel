@@ -5,10 +5,12 @@
 
 USING_NS_CC;
 
-//** 테스트용 화면 사이즈 테스트 수정
+//** 테스트용 화면 사이즈
 //static cocos2d::Size designResolutionSize = cocos2d::Size(480, 320);
 //static cocos2d::Size designResolutionSize = cocos2d::Size(1024, 768);
 //static cocos2d::Size designResolutionSize = cocos2d::Size(360, 720);
+
+
 //static cocos2d::Size smallResolutionSize = cocos2d::Size(1440, 2560);//480,320
 //static cocos2d::Size mediumResolutionSize = cocos2d::Size(1440, 2560);//1024, 768
 //static cocos2d::Size largeResolutionSize = cocos2d::Size(1440, 2560);//2048, 1536

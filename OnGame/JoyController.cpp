@@ -10,7 +10,6 @@ bool JoyController::chkMoveBound(Point touch) {
 	return touch.y <= winSize().height*0.14f;
 }
 
-
 bool JoyController::init()
 {
 	if (!Layer::init())
@@ -67,19 +66,15 @@ bool JoyController::init()
 
 
 	listener_Move = EventListenerTouchOneByOne::create();
-	//listener_Move->setSwallowTouches(true);
 	listener_Move->onTouchBegan = CC_CALLBACK_2(JoyController::onTouchBegan_Move, this);
 	listener_Move->onTouchMoved = CC_CALLBACK_2(JoyController::onTouchMoved_Move, this);
 	listener_Move->onTouchEnded = CC_CALLBACK_2(JoyController::onTouchEnded_Move, this);
 
-
 	listener_Jump = EventListenerTouchOneByOne::create();
-	//listener_Jump->setSwallowTouches(true);
 	listener_Jump->onTouchBegan = CC_CALLBACK_2(JoyController::onTouchBegan_Jump, this);
 	listener_Jump->onTouchMoved = CC_CALLBACK_2(JoyController::onTouchMoved_Jump, this);
 	listener_Jump->onTouchEnded = CC_CALLBACK_2(JoyController::onTouchEnded_Jump, this);
 	//listener_Jump->onTouchCancelled = CC_CALLBACK_2(JoyController::onTouchCancelled_Jump, this);
-
 
 	//listener_JoyButton = EventListenerTouchOneByOne::create();
 	//listener_JoyButton->setSwallowTouches(true);
@@ -88,14 +83,12 @@ bool JoyController::init()
 	//listener_JoyButton->onTouchEnded = CC_CALLBACK_2(JoyController::onTouchEnded_JoyButton, this);
 
 	listener_Attack = EventListenerTouchOneByOne::create();
-	//listener_Attack->setSwallowTouches(true);
 	listener_Attack->onTouchBegan = CC_CALLBACK_2(JoyController::onTouchBegan_Attack, this);
 	listener_Attack->onTouchMoved = CC_CALLBACK_2(JoyController::onTouchMoved_Attack, this);
 	listener_Attack->onTouchEnded = CC_CALLBACK_2(JoyController::onTouchEnded_Attack, this);
 	//listener_Attack->onTouchCancelled = CC_CALLBACK_2(JoyController::onTouchCancelled_Attack, this);
 
 	listener_Defense = EventListenerTouchOneByOne::create();
-	//listener_Defense->setSwallowTouches(true);
 	listener_Defense->onTouchBegan = CC_CALLBACK_2(JoyController::onTouchBegan_Defense, this);
 	listener_Defense->onTouchMoved = CC_CALLBACK_2(JoyController::onTouchMoved_Defense, this);
 	listener_Defense->onTouchEnded = CC_CALLBACK_2(JoyController::onTouchEnded_Defense, this);
@@ -106,10 +99,6 @@ bool JoyController::init()
 void JoyController::onEnter()
 {
 	Layer::onEnter();
-	//Director::getInstance()->getEventDispatcher()->addEventListenerWithFixedPriority(listener_Move, 2);
-	//Director::getInstance()->getEventDispatcher()->addEventListenerWithFixedPriority(listener_Jump, 3);
-	//Director::getInstance()->getEventDispatcher()->addEventListenerWithFixedPriority(listener_Defense, 4);
-	//Director::getInstance()->getEventDispatcher()->addEventListenerWithFixedPriority(listener_Attack, 5);
 	listener_Move->setSwallowTouches(true);
 	listener_Jump->setSwallowTouches(true);
 	listener_Defense->setSwallowTouches(true);
@@ -119,13 +108,12 @@ void JoyController::onEnter()
 	Director::getInstance()->getEventDispatcher()->addEventListenerWithSceneGraphPriority(listener_Attack, sprBtnAttack);
 	Director::getInstance()->getEventDispatcher()->addEventListenerWithSceneGraphPriority(listener_Jump, sprBtnJump);
 	Director::getInstance()->getEventDispatcher()->addEventListenerWithSceneGraphPriority(listener_Defense, sprBtnDefense);
-
 }
 
 
 void JoyController::update(float deltaTime) {
 
-	//Slide 입력에 의한, Jump
+	//Slide 입력에 의한, JumpUp
 	if (isTouchedJump)
 	{
 		//잔상 이펙트
@@ -138,17 +126,15 @@ void JoyController::update(float deltaTime) {
 			spr_finger->removeFromParentAndCleanup(true); });
 		spr_finger->runAction(Sequence::create(fade_out, remove_self, nullptr));
 
-
 		//12시 방향. 실제 점프 시작
 		if (curJumpPos.y - initJumpPos.y > winSize().width*0.05)
 		{
 			auto move_up = MoveBy::create(0.08f, Point(0, 100));
 			auto sequence = Sequence::create(move_up, move_up->reverse(), nullptr);
 			sprBtnJump->runAction(sequence);
-			inActivateBtnJump();
-
-			//jump up 비트를 on
+			
 			mainChar->setOnStateInput(JUMP, UP);
+			inActivateBtnJump();
 
 			isTouchedJump = false;
 			if (isZoomIn) {
@@ -167,7 +153,8 @@ void JoyController::update(float deltaTime) {
 		if (!mainChar->getOnStateInput(ATTACK, SWIPE) && !mainChar->getOnStateTrigger(ATTACK, SWIPE))
 		{
 			float between_angle = curAtkRot - marginAtkRot.first;
-			if (90.0f < between_angle && between_angle < 180.0f){
+			if (90.0f < between_angle && between_angle < 180.0f)
+			{
 				marginAtkRot.first = 0.0f;
 				EffectManager::getInstance()->stopAttackCharge();
 				mainChar->setOnStateInput(ATTACK, SWIPE);
@@ -177,7 +164,8 @@ void JoyController::update(float deltaTime) {
 		else if (mainChar->getOnStateInput(ATTACK, SWIPE) && mainChar->getOnStateTrigger(ATTACK, SWIPE))
 		{
 			float between_angle = curAtkRot - marginAtkRot.second;
-			if (-180.0f < between_angle && between_angle < -90.0f){
+			if (-180.0f < between_angle && between_angle < -90.0f)
+			{
 				marginAtkRot.second = 0.0f;
 				EffectManager::getInstance()->runAttackCharge(4.0f, *sprBtnAttack);
 				mainChar->setOffStateInput(ATTACK, SWIPE);
@@ -486,7 +474,6 @@ void JoyController::onTouchCancelled_Defense(Touch* touch, Event* unused_event) 
 };
 
 
-//리스너의 타겟이 터치되었는지 여부 반환
 bool JoyController::isListenerTargetTouched(Touch* touch, Event* unused_event)
 {
 	Sprite* target = static_cast<Sprite*>(unused_event->getCurrentTarget());
@@ -498,8 +485,6 @@ bool JoyController::isListenerTargetTouched(Touch* touch, Event* unused_event)
 	else
 		return false;
 }
-
-
 
 
 

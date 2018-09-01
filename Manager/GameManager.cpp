@@ -4,27 +4,6 @@
 
 USING_NS_CC;
 
-Size winSize(){
-	return Director::getInstance()->getWinSize();
-} 
-
-//현재스크린의 종횡비
-float winAspectRatio()
-{
-	return winSize().height / winSize().width;
-}
-
-float DivForHorizontal(Sprite* target)
-{
-	return winSize().width / (target->getContentSize().width);
-}
-
-float DivForVertical(Sprite* target)
-{
-	return winSize().height / (target->getContentSize().height);
-}
-
-
 //***************************	#EventManager	**************************************// 
 EventManager* EventManager::EventManager_instance = NULL;
 EventManager* EventManager::getInstance()

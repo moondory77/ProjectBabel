@@ -22,7 +22,6 @@ void BGManager::initBG()
 {
 	//초기화 시, 저장되어있는 karma 양에 따라, 생성frame들 결정
 	int cur_idx = curKarma * KARMA_BG_FACTOR;
-
 	bottomFrame = new FrameBG();
 	bottomFrame->frameIdx = cur_idx - 1;
 

@@ -20,18 +20,29 @@ enum sceneNum {
 	RECORD = 5,
 };
 
-//** sprite의 크기를 screen의 비율에 맞춰 조정하는 factor 반환
-Size winSize();
-float winAspectRatio();
-float DivForVertical(Sprite* target);
-float DivForHorizontal(Sprite* target);
+static inline Size winSize() {
+	return Director::getInstance()->getWinSize();
+};
+
+static inline float winAspectRatio() {
+	return winSize().height / winSize().width;
+};
+
+//Sprite에 대한, 스크린 종/횡 역비율
+static inline float DivForVertical(Sprite* target){
+	return winSize().height / (target->getContentSize().height);
+};
+
+static inline float DivForHorizontal(Sprite* target){
+	return winSize().width / (target->getContentSize().width);
+};
 
 
 
 //** 각종 게임 내의 이벤트 발생 시, 그 관리를 도와주는 클래스
 class EventManager : public cocos2d::CCNode
 {
-	EventManager() 
+	EventManager()
 	{
 		this->stage = 1;
 		this->is_from_result = false;
@@ -53,7 +64,7 @@ public:
 	///콜백함수. 액션으로 만들기 위해 생성
 
 	/*
-	씬넘버 
+	씬넘버
 	0 => Lobby 씬
 	1 => onReady 씬
 	2 => onGame 씬
@@ -61,7 +72,7 @@ public:
 	4 => CharacterInfo 씬
 	5 => Record 씬
 	*/
-	
+
 	// delay 시간 후에, 씬 전환하는 액션 반환 해당 시간 동안, 모든 리스너도 잠재운다.	 
 	Action* sceneTransferAction(float delay, sceneNum scene_num);
 	void callback_sceneTransfer(Ref *sender, sceneNum scene_num);

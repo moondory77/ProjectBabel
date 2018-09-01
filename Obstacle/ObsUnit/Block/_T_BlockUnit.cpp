@@ -16,7 +16,6 @@ BlockUnit::BlockUnit()
 }
 
 
-
 //deltaTime에 대한 position Update
 void BlockUnit::positionUpdate(float deltaTime)
 {
@@ -82,8 +81,6 @@ void BlockUnit::positionUpdate(float deltaTime)
 	}
 
 }
-
-
 void BlockUnit::stateUpdate(float deltaTime)
 {
 	//공격에 대한 update
@@ -159,6 +156,8 @@ void BlockUnit::stateUpdate(float deltaTime)
 
 };
 
+
+
 vector<int>& BlockUnit::getUnitChunk()
 {
 	if (chunkID >= 0)
@@ -166,6 +165,8 @@ vector<int>& BlockUnit::getUnitChunk()
 	else
 		return container->getBufferChunk().at(-(chunkID + 1));
 }
+
+
 
 
 //Dead 처리된(remove 버퍼의 유닛)을 실제로 제거
@@ -305,6 +306,7 @@ void BlockUnit::setPositionY(float newY)
 //아직 방문 전 블록인지 검사
 bool BlockUnit::isVisitable()
 {
+	//양수 Phase에 음수 키, 혹은 그 반대일 경우 아직 방문 전을 알 수 있음
 	if ((container->getChunkingPhase() && (chunkID <= 0))
 		|| (!container->getChunkingPhase() && (chunkID >= 0)))
 		return true;
@@ -316,11 +318,9 @@ bool BlockUnit::isVisitable()
 
 bool BlockUnit::isSearchable(int chunk_id, const Point& pos)
 {
-	if (isAlive() && isVisitable())
-	{
+	if (isAlive() && isVisitable()){
 		return (fabsf(pos.getDistance(getPosition())) < getWidth()*1.1f);
 	}
-
 	return false;
 }
 

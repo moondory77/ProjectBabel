@@ -9,11 +9,11 @@ using namespace std;
 
 //캐릭터 FSM의 Base State
 enum charStateType {
-	NONE = 1,	MOVE = 2,
-	ATTACK = 7,	DEFENSE = 11,
+	NONE = 1, MOVE = 2,
+	ATTACK = 7, DEFENSE = 11,
 	SPC_ATK = 13,
-	JUMP = 17,	CRASH = 29,
-	DEAD = 31,	PRESSED = 37
+	JUMP = 17, CRASH = 29,
+	DEAD = 31, PRESSED = 37
 };
 
 //모션교체 State-Machine에서, animation 형태의 Action 
@@ -36,8 +36,11 @@ enum charActionType {
 	actMoveRight, actMoveRightEnd
 };
 
-//MotionLock에 대한, 각 Atomic Animation의 bit 위치
-enum charMotionElement {
+
+
+//MotionLock에 대한, 각 Atomic Action의 bit 위치
+enum charMotionElement
+{
 	ANIMATION = 1,
 	CIRCLE = 2,
 	WEAPON = 4,
@@ -49,17 +52,12 @@ class Character : public CCNode
 {
 private:
 
-	int state;				//상태
-	//	cri_atk,			//공격 크리 확률
-	//	cri_def,			//방어 크리 확률
-	//	cri_spc;			//필살 크리 확률
-	//	//defense;			//방어게이지 감소율
-
-	Point prevPos;	//운동 변화 추적을 위한 (이전 프레임의) 위치
+	int state;				//캐릭터의 상태 스택
+	Point prevPos;			//운동 변화 추적을 위한 (이전 프레임의) 위치
 
 	///# 모든 Sprite의 Scale은, winSize의 width에 대한 비율을 기준으로 한다
-	float bodyScale;			
-	
+	float bodyScale;
+
 	float defWpScale;			//현재 status에 대한, 디폴트 스케일
 	float maxWpScale = 0.2f;
 	float curWpScale;
@@ -71,10 +69,9 @@ private:
 	float curVeloY;				//현재 속도(y축)
 	float outerVeloY;			//충돌 시, 외부로부터 받는 delta velocity (y축)
 	float curGravity;
-	
+
 	int powerSP;
 	int powerNormal;
-
 
 	//1회 공격&방어 보장을 위한 유니크 아이디
 	int attackID = 0;
@@ -97,6 +94,7 @@ private:
 		{ CRASH , 0 },{ PRESSED , 0 },
 		{ DEAD , 0 }
 	};
+
 	map<charActionType, pair<float, float>> finishRotation = {
 		{ actNone			, { 41.0f, 4.0f}},
 		{ actJumpReady		, { 38.0f, 18.0f }},
@@ -111,24 +109,26 @@ private:
 		{ actMoveLeft		, { 28.0f, 10.0f }},
 		{ actMoveRight		, { 151.0f, 170.0f }}
 	};
+
 	map<charActionType, Vector<SpriteFrame*>> motionFrames = {
 		{ actNone , {}},
-		{ actJumpReady ,{} }, { actJumpCancel ,{} },
-		{ actJumpUp ,{} }, { actJumpDown ,{} },
+		{ actJumpReady ,{} },		{ actJumpCancel ,{} },
+		{ actJumpUp ,{} },			{ actJumpDown ,{} },
 
-		{ actAtkLandReady ,{} }, { actAtkLandHit ,{} },
-		{ actAtkLandBack ,{} }, { actAtkJumpReady ,{} },
-		{ actAtkJumpHit ,{} }, { actAtkJumpBack ,{} },
+		{ actAtkLandReady ,{} },	{ actAtkLandHit ,{} },
+		{ actAtkLandBack ,{} },		{ actAtkJumpReady ,{} },
+		{ actAtkJumpHit ,{} },		{ actAtkJumpBack ,{} },
 
-		{ actDefLand ,{} }, { actDefLandEnd ,{} },
-		{ actDefJump ,{} }, { actDefJumpEnd ,{} },
+		{ actDefLand ,{} },			{ actDefLandEnd ,{} },
+		{ actDefJump ,{} },			{ actDefJumpEnd ,{} },
 
-		{ actSPCLand ,{} }, { actSPCLandEnd ,{} },
-		{ actSPCJump ,{} },	{ actSPCJumpEnd ,{} },
+		{ actSPCLand ,{} },			{ actSPCLandEnd ,{} },
+		{ actSPCJump ,{} },			{ actSPCJumpEnd ,{} },
 
-		{ actMoveLeft ,{} }, { actMoveLeftEnd ,{} },
-		{ actMoveRight ,{} }, { actMoveRightEnd ,{} },
+		{ actMoveLeft ,{} },		{ actMoveLeftEnd ,{} },
+		{ actMoveRight ,{} },		{ actMoveRightEnd ,{} },
 	};
+
 	map<charActionType, SpriteFrame*> finishFrame = {
 		{ actNone , NULL },
 		{ actAtkLandReady ,NULL }, { actAtkLandHit ,NULL },
@@ -183,21 +183,22 @@ public:
 
 	//int getAttackDamage(Block* blk);
 	//대상을 attack radar 체크해서 유효데미지 반환
-	int chkAttckRadar(const Sprite& attackable);
-	int chkDefenseRadar(const Sprite& defensable);
+	int chkAttckRadar(const Sprite& attackable_unit);
+	int chkDefenseRadar(const Sprite& defensable_unit);
 
 
 	//현재 장착 weapon에 대해, 유효 타격 min~max 범위
-	pair<float, float> attackRadius;
-	pair<float, float> attackAngle = { -45.0f, 178.0f };
-	float lapsedAttackTick;	//공격 애니메이션이 진행되는 지표 변수 (0~1)
-	void callback_tick_AttackScope(float deltaTime);
-	void callback_tick_AttackCharge(float deltaTime);
-	void callback_tick_AttackRelease(float deltaTime);
+	pair<float, float> atkScopeRadius;
+	pair<float, float> atkScopeAngle = { -45.0f, 178.0f };
+	float lapsedAtkTick;			//공격 애니메이션이 진행되는 시간 지표 (0 ~ 1 까지 변화)
 
+	void callback_tick_AtkScope(float deltaTime);
+	void callback_tick_AtkCharge(float deltaTime);
+	void callback_tick_AtkRelease(float deltaTime);
+
+	int getState() { return state; };
 	void getMotionLock(charActionType input_action);
 	void releaseMotionLock(charActionType input_action, charMotionElement target);
-	int getState() { return state; };
 
 	bool getSpcIntroPlaying() { return isSpcIntroPlaying; }
 	void setSpcIntroPlaying(bool isSpcIntroPlaying) { this->isSpcIntroPlaying = isSpcIntroPlaying; }
@@ -244,7 +245,7 @@ public:
 
 
 	float getLimitHeight() { return limitHeight; }
-	float getJumpVelo() { return jumpVelo; }	
+	float getJumpVelo() { return jumpVelo; }
 	float getVeloY() { return curVeloY; }
 	void setVeloY(float v) { curVeloY = v; }
 	float getGravity() { return curGravity; }
@@ -274,32 +275,6 @@ public:
 	void setWpScale(float wp_scale);
 	float getBodyScale() { return bodyScale; }
 
-
-
-	//해당 State 비트를 가져온다
-	//bool getInputState(charStateType state, unsigned char target_bit);
-	void initStateBit(charStateType state) { 
-		this->inputState[state] = 0; 
-		//CCLOG("now state is %d", inputState[state]);
-	}; 	//StateBit 전체 초기화
-	
-	void setOnStateBit(charStateType state, unsigned char target_bit);		//StateBit n번째 비트를 on (0~7)
-	void setOffStateBit(charStateType state, unsigned char target_bit);		//StateBit n번째 비트를 off (0~7)
-	bool getOnStateBit(charStateType state, unsigned char target_bit);		//StateBit on/off 여부 반환 (0~7)
-
-	//input bit 관리
-	void setOnStateInput(charStateType state, unsigned char target_bit);	//input에 대한 setOn (0~3)
-	void setOffStateInput(charStateType state, unsigned char target_bit);	//input에 대한 setOff (0~3)
-	bool getOnStateInput(charStateType state, unsigned char target_bit);	//input에 대한 on/off 여부 반환 (0~3)
-
-	//trigger bit 관리
-	void setOnStateTrigger(charStateType state, unsigned char target_bit);	//trigger에 대한 setOn (0~3)
-	void setOffStateTrigger(charStateType state, unsigned char target_bit);	//trigger에 대한 setOff (0~3)
-	bool getOnStateTrigger(charStateType state, unsigned char target_bit);	//trigger에 대한 on/off 여부 반환 (0~3)
-
-	//input 비트와 trigger 비트 동일 여부 반환
-	bool getEqualInputTrigger(charStateType state);
-	bool getDirtyInputTrigger(charStateType state, bool input_bit);				//Input/Trigger의 dirty 여부 반환
 
 
 
@@ -343,10 +318,9 @@ public:
 
 	/* State Machine 관련 */
 	void delAllState() { this->state = 1; };
+	
 	bool isCritical() { return RandomHelper::random_int(1, 100) <= 30; };		//크리티컬 판정
 	bool isAttack() { return (this->state % ATTACK == 0); };
-	//bool isJumpUp() { return (this->state % JUMP_UP == 0); };
-	//bool isJumpDown() { return (this->state % JUMP_DOWN == 0); };
 	bool isJump() { return (this->state % JUMP == 0); };
 
 	bool isPressed() { return (this->state % PRESSED == 0); };
@@ -354,13 +328,13 @@ public:
 	bool isSpcAttack() { return (this->state % SPC_ATK == 0); };
 	bool isCrash() { return (this->state % CRASH == 0); };
 	bool isDead() { return (this->state %DEAD == 0); };
-	// isMoveLeft() { return (this->state % MOVE_LEFT == 0); };
-	//bool isMoveRight() { return (this->state % MOVE_RIGHT == 0); };
 	bool isMove() { return (this->state % MOVE == 0); };
 	bool isAtLand() { return (getSprPositionY() <= landHeight); };
 
-
-
+	//bool isCritical();		//크리티컬 판정
+	//bool isSpcAttack() ;
+	//bool isDead() ;
+	//bool isMove() ;
 
 	void callback_FinishSpcIntro(Ref* sender);
 	void callback_DelSpc(Ref* sender);
@@ -368,11 +342,72 @@ public:
 	void callback_DelPress(Ref* sender);
 
 
-	//bool isCritical();		//크리티컬 판정
-	//bool isSpcAttack() ;
-	//bool isDead() ;
-	//bool isMove() ;
-	//bool isAtLand() ;
+
+	//State Bit 전체 초기화
+	inline void initStateBit(charStateType state) { this->inputState[state] = 0; };
+	//State Bit(0 ~ 7 bit) n번째 비트를 set on 
+	inline void setOnStateBit(charStateType state, unsigned char target_bit) {
+		inputState[state] |= (unsigned char)pow(2, target_bit);
+	};
+	//State Bit(0 ~ 7 bit) n번째 비트를 set off
+	inline void setOffStateBit(charStateType state, unsigned char target_bit) {
+		inputState[state] &= ~(unsigned char)pow(2, target_bit);
+	}
+	//State Bit(0 ~ 7 bit) n번째 비트 on/off 여부 반환 
+	inline bool getOnStateBit(charStateType state, unsigned char target_bit) {
+		return inputState[state] & (unsigned char)pow(2, target_bit);
+	}
+
+
+	//input bit(4 bit)에 대한 on/off 
+	inline void setOnStateInput(charStateType state, unsigned char target_bit) {
+		setOnStateBit(state, target_bit % 4);
+	}
+	inline void setOffStateInput(charStateType state, unsigned char target_bit) {
+		setOffStateBit(state, target_bit % 4);
+	}
+	inline bool getOnStateInput(charStateType state, unsigned char target_bit) {
+		return getOnStateBit(state, target_bit % 4);
+	}
+
+	//trigger(4 bit)에 대한 on/off
+	inline void setOnStateTrigger(charStateType state, unsigned char target_bit) {
+		setOnStateBit(state, (target_bit % 4) + 4);
+	};
+	inline void setOffStateTrigger(charStateType state, unsigned char target_bit) {
+		setOffStateBit(state, (target_bit % 4) + 4);
+	};
+	inline bool getOnStateTrigger(charStateType state, unsigned char target_bit) {
+		return getOnStateBit(state, (target_bit % 4) + 4);
+	}
+
+	//input - trigger 비교 반환
+	inline bool getEqualInputTrigger(charStateType state) {
+
+		unsigned char state_bit = inputState[state];
+		unsigned char input = state_bit << 4;
+		unsigned char trigger = state_bit &= ~15;		//input bit 부분은 전체 마스킹
+
+		return (input == trigger);						//input 비트와 trigger 비트 동일 여부
+	};
+	//input - trigger dirty 여부 반환
+	inline bool getDirtyInputTrigger(charStateType state, bool input_or_trigger) {
+
+		unsigned char state_bit = inputState[state];
+
+		if (input_or_trigger) {
+			unsigned char input = state_bit << 4;
+			return input != 0;
+		}
+		else {
+			//input_bit 부분 마스킹(off 처리)
+			unsigned char trigger = state_bit &= ~15;
+			return trigger != 0;
+		}
+	};
+
+
+
 };
 
 #endif

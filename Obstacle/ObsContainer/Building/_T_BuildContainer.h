@@ -84,7 +84,6 @@ public:
 	float getGravity() { return curGravity; }
 	void setGravity(float gravity) { this->curGravity = gravity; }
 
-
 	void setInitPos(Point& init_pos) { initPos = init_pos; };
 	void initBlkFrames();
 	void buildBlocks(Point& init_pos);
@@ -94,16 +93,14 @@ public:
 	int getNumCol() { return numCol; }
 	void setBrokenCnt(int broken_cnt) { this->brokenCnt = broken_cnt; };
 	int getBrokenCnt() { return this->brokenCnt; };
-	int getAliveUnitCnt() { return numRow * numCol - brokenCnt; };
-
-	vector<vector<int>>& getBufferChunk() {
-		if (chunkingPhaseFlag)
-			return bufferChunkPositive;
-		else
-			return bufferChunkNegative;
-	};
+	void getRigidTime(float frame_damage);
 
 
+	Vec2 getCrashBounceVec();	//충돌 시 발생하는 캐릭터 bounce를 vec2로 리턴
+	void dumpCrashBuffer();		//충돌 버퍼 일괄 처리
+	void dumpRemoveBuffer();	//파괴 버퍼 일괄 처리
+
+	
 	/*** chunking 관련 함수 ***/
 	bool getChunkingFinish() { return chunkingFinishFlag; };
 	void setChunkingFinish(bool flag) { chunkingFinishFlag = flag; }
@@ -112,18 +109,23 @@ public:
 	bool getChunkingPhase() { return chunkingPhaseFlag; };
 	void resetChunkingPhase();		//chunking phase를 전환
 	int getNewChunkID();			//chunking phase에 따라 적절한 id 발급
-	void chunkBlocks();		//연결된 블록끼리 묶음
 
+	void chunkBlocks();		//연결된 블록끼리 묶음
 	vector<int>& breadthSearch(int chunk_id, vector<int>& main_stack);
 	void BFS(int chunk_id, int caller_idx);
-	void getRigidTime(float frame_damage);
 
-	Vec2 getCrashBounceVec();	//충돌 시 발생하는 캐릭터 bounce를 vec2로 리턴
-	void dumpCrashBuffer();		//충돌 버퍼 일괄 처리
-	void dumpRemoveBuffer();	//파괴 버퍼 일괄 처리
 
-	int get1DIndex(int row_idx, int col_idx) { return row_idx * numCol + col_idx; };
-	pair<int, int> get2DIndex(int linked_idx) { return pair<int, int> {linked_idx / numCol, linked_idx % numCol}; };
+
+	inline int get1DIndex(int row_idx, int col_idx) { return row_idx * numCol + col_idx; };
+	inline pair<int, int> get2DIndex(int linked_idx) { return pair<int, int> {linked_idx / numCol, linked_idx % numCol}; };
+	inline int getAliveUnitCnt() { return numRow * numCol - brokenCnt; };
+	
+	//현재 Phase에 맞는 Chunk Buffer 리턴
+	inline vector<vector<int>>& getBufferChunk() {
+		if (chunkingPhaseFlag)	return bufferChunkPositive;
+		else
+			return bufferChunkNegative;
+	}; 
 
 
 	virtual void update(float deltaTime) {};
