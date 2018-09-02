@@ -429,7 +429,7 @@ int Character::chkAttckRadar(const Sprite& attackable_unit)
 	if (attackRadar->getBoundingBox().intersectsRect(unit_bound_box))
 	{
 		Point trans_pos = Point(unit_bound_box.getMidX(), unit_bound_box.getMidY());
-	
+
 		//유효데미지 체크
 		Vec2 cur_attack_vector = trans_pos - sprCircle->getPosition();
 		float cur_dist = cur_attack_vector.getLength();
@@ -1401,7 +1401,6 @@ void Character::changeCharMotion(bool isAdd, charStateType targetState)
 
 void Character::addState(charStateType aState)
 {
-
 	//새로운 state 삽입 시도에만, 삽입
 	if (this->state % aState != 0)
 	{
@@ -1415,6 +1414,18 @@ void Character::addState(charStateType aState)
 		case ATTACK:
 		{
 			updateAttackID();
+
+
+
+			////Attak Charge 중이었으면, Charge 해제와 동시에 Release 시작
+			//if (Director::getInstance()->getScheduler()->isScheduled(schedule_selector(Character::callback_tick_AtkCharge), this))
+			//{
+			//	Director::getInstance()->getScheduler()->unschedule(schedule_selector(Character::callback_tick_AtkCharge), this);
+			//	Director::getInstance()->getScheduler()->schedule(schedule_selector(Character::callback_tick_AtkRelease), this, 1 / 30.f, false);
+			//}
+
+
+
 			//방어 input이 있다면, 초기화
 			if (getDirtyInputTrigger(DEFENSE, true)) {
 				delState(DEFENSE);
@@ -1476,12 +1487,12 @@ void Character::addState(charStateType aState)
 		default:
 			break;
 		}
-
 		//새롭게 add 된 state 에 대한 모션 전환(필요할 경우만)
 		if (aState != CRASH && aState != PRESSED && aState != DEAD)
 			changeCharMotion(true, aState);
 	}
 }
+
 void Character::delState(charStateType dState)
 {
 	//존재하는 state의 삭제 명령에만 삭제
@@ -1502,7 +1513,6 @@ void Character::delState(charStateType dState)
 		changeCharMotion(false, dState);
 	}
 }
-
 
 void Character::positionUpdate(float deltaTime) {
 
@@ -1537,12 +1547,12 @@ void Character::positionUpdate(float deltaTime) {
 			float gravity;
 
 			//중력 임의조절
-			if (cur_velocity < 86)
+			if (cur_velocity < 40)
+				gravity = getGravity()*0.9f;
+			else if (cur_velocity < 20)
 				gravity = getGravity()*0.8f;
-			else if (cur_velocity < 78)
-				gravity = getGravity()*0.7f;
-			else if (cur_velocity < 65)
-				gravity = getGravity()*0.5f;
+			//else if (cur_velocity < 65)
+			//	gravity = getGravity()*0.5f;
 			//else if (cur_velocity < 55)
 			//	gravity = getGravityChar()*0.45f;
 			//else if (cur_velocity < 45)
@@ -1557,7 +1567,7 @@ void Character::positionUpdate(float deltaTime) {
 				gravity = getGravity();
 
 
-			float delta_velocity = -gravity*gravity*gravity*0.6f*deltaTime + cur_velocity;
+			float delta_velocity = -gravity * gravity * gravity *0.25f * deltaTime + cur_velocity;
 			setVeloY(delta_velocity);
 			updated_pos.y += delta_velocity;
 
@@ -1577,9 +1587,10 @@ void Character::positionUpdate(float deltaTime) {
 
 }
 
+
 void Character::stateUpdate(float deltaTime)
 {
-	//(collider의 위치)에 본체(sprChar)를 맞춰줌 
+	//(collider의 위치)에 본체(sprChar)를 calibration 
 	setSprPosition(getColliderPosition());
 
 	//지면에서 충돌시, Press 상태
@@ -1605,8 +1616,9 @@ void Character::stateUpdate(float deltaTime)
 			setOffStateInput(JUMP, UP);
 		}
 	}
-	
+
 	stateTransitionUpdate();
+
 
 	//방어 게이지 업데이트
 	if (isDefense()) {
@@ -1664,8 +1676,11 @@ void Character::stateTransitionUpdate()
 						playCharAction(actAtkJumpReady);
 					else
 						playCharAction(actAtkLandReady);
-
-					Director::getInstance()->getScheduler()->schedule(schedule_selector(Character::callback_tick_AtkCharge), this, 1 / 30.f, false);
+					/*
+					if (!Director::getInstance()->getScheduler()->isScheduled(schedule_selector(Character::callback_tick_AtkCharge), this)) {
+							Director::getInstance()->getScheduler()->schedule(schedule_selector(Character::callback_tick_AtkCharge), this, 1 / 30.f, false);
+						}
+						*/
 				}
 				//Attack Hit (01 | 11)
 				else if (!getOnStateTrigger(ATTACK, SWIPE) && (getOnStateInput(ATTACK, SWIPE)))
@@ -1673,13 +1688,9 @@ void Character::stateTransitionUpdate()
 					setOnStateTrigger(ATTACK, SWIPE);
 					addState(ATTACK);
 
-					if (Director::getInstance()->getScheduler()->isScheduled(schedule_selector(Character::callback_tick_AtkCharge), this))
-						Director::getInstance()->getScheduler()->unschedule(schedule_selector(Character::callback_tick_AtkCharge), this);
-					if (!Director::getInstance()->getScheduler()->isScheduled(schedule_selector(Character::callback_tick_AtkRelease), this))
-						Director::getInstance()->getScheduler()->schedule(schedule_selector(Character::callback_tick_AtkRelease), this, 1 / 30.f, false);
-
 					EffectManager::getInstance()->runBladeWind(sprChar->getPosition() + Vec2(0, getWpHeight()*0.15f), Vec2(-130, 160), 1.3f, false, *canvas);
 				}
+
 				//Attack Back (11 | 01)
 				else if (getOnStateTrigger(ATTACK, SWIPE) && !getOnStateInput(ATTACK, SWIPE))
 				{
@@ -1698,11 +1709,6 @@ void Character::stateTransitionUpdate()
 				playCharAction(actAtkJumpCancel);
 			else if (isAtLand())
 				playCharAction(actAtkLandCancel);
-
-			if (Director::getInstance()->getScheduler()->isScheduled(schedule_selector(Character::callback_tick_AtkCharge), this))
-				Director::getInstance()->getScheduler()->unschedule(schedule_selector(Character::callback_tick_AtkCharge), this);
-			if (!Director::getInstance()->getScheduler()->isScheduled(schedule_selector(Character::callback_tick_AtkRelease), this))
-				Director::getInstance()->getScheduler()->schedule(schedule_selector(Character::callback_tick_AtkRelease), this, 1 / 30.f, false);
 
 			initStateBit(ATTACK);
 		}
@@ -1732,26 +1738,26 @@ void Character::stateTransitionUpdate()
 				else if (!getOnStateTrigger(JUMP, DOWN) && getOnStateInput(JUMP, DOWN))
 				{
 					//다른 액션이 진행중 상태인지 확인
-					if (!isDefense() && !getDirtyInputTrigger(ATTACK, true))
-					{
+					if (!isDefense() && !getDirtyInputTrigger(ATTACK, true)) {
 						setOnStateTrigger(JUMP, DOWN);
 						playCharAction(actJumpDown);
 					}
 				}
 			}
 			//(공중 -> 지상) 복귀
-			if (getOnStateTrigger(JUMP, UP) && !getOnStateInput(JUMP, UP)
-				&& (getVeloY() < 0)){
+			if (getOnStateTrigger(JUMP, UP) && !getOnStateInput(JUMP, UP) && (getVeloY() < 0))
+			{
 				setPositionY(landHeight);
 				delState(JUMP);
 				setVeloY(0);
 			}
 		}
-		else if (!isMotionPlaying && getOnStateTrigger(JUMP, TOUCH)){
+		else if (!isMotionPlaying && getOnStateTrigger(JUMP, TOUCH)) {
 			initStateBit(JUMP);
 			playCharAction(actJumpCancel);
 		}
 	}
+
 
 	//#4 MOVE transition
 	if (!getEqualInputTrigger(MOVE))
@@ -1785,7 +1791,6 @@ void Character::stateTransitionUpdate()
 					addState(MOVE);
 					setOnStateTrigger(MOVE, RIGHT);
 				}
-
 			}
 			//( dirty / 00 ) move 끝 
 			else if (!getDirtyInputTrigger(MOVE, true)) {
@@ -1793,7 +1798,6 @@ void Character::stateTransitionUpdate()
 			}
 		}
 	}
-
 }
 
 
@@ -1801,7 +1805,7 @@ void Character::stateTransitionUpdate()
 void Character::setWpScale(float input_wp_scale) {
 
 	curWpScale = input_wp_scale;
-	CCLOG("wp scale set : %.2f", curWpScale);
+	//CCLOG("wp scale set : %.2f", curWpScale);
 	sprWeapon->setScale(curWpScale * DivForHorizontal(sprWeapon) / sprChar->getScale());
 
 	//(wp_scale + body_scale)의 기준 스케일을 구해, 그 비율로 레이더 크기 증가
@@ -1811,7 +1815,6 @@ void Character::setWpScale(float input_wp_scale) {
 	attackRadar->setScaleX(radar_x_scale / sprChar->getScale() * 1.75f);
 	attackRadar->setScaleY(radar_y_scale / sprChar->getScale() / winAspectRatio());
 }
-
 
 
 //공격(검 휘두름)에 시간에 따른 데미지 범위 변화 스케쥴 콜백
@@ -1826,28 +1829,6 @@ void Character::callback_tick_AtkScope(float deltaTime)
 	}
 };
 
-void Character::callback_tick_AtkCharge(float deltaTime)
-{
-	if (curWpScale < maxWpScale) {
-		auto updated_scale = getWpScale() + 0.05f * deltaTime / 1.0f;
-		setWpScale(updated_scale);
-	}
-	else {
-		Director::getInstance()->getScheduler()->unschedule(schedule_selector(Character::callback_tick_AtkCharge), this);
-	}
-}
-
-void Character::callback_tick_AtkRelease(float deltaTime)
-{
-	if (curWpScale > defWpScale)
-	{
-		auto updated_scale = getWpScale() - 0.1f * deltaTime / 1.0f;
-		setWpScale(updated_scale);
-	}
-	else {
-		Director::getInstance()->getScheduler()->unschedule(schedule_selector(Character::callback_tick_AtkRelease), this);
-	}
-}
 
 void Character::callback_FinishSpcIntro(Ref* sender) {
 
@@ -1913,6 +1894,54 @@ void Character::increaseDefPoint(float deltaTime) {
 	else
 		curDefPoint = maxDefPoint;
 }
+
+
+void Character::callback_tick_AtkCharge(float deltaTime)
+{
+	if (curWpScale < maxWpScale)
+	{
+		auto updated_scale = curWpScale + 0.05f * deltaTime / 1.0f;
+		setWpScale(updated_scale);
+	}
+}
+void Character::callback_tick_AtkRelease(float deltaTime)
+{
+	if (curWpScale > defWpScale)
+	{
+		auto updated_scale = curWpScale - 0.2f * deltaTime / 1.0f;
+		setWpScale(updated_scale);
+	}
+	else {
+		Director::getInstance()->getScheduler()->unschedule(schedule_selector(Character::callback_tick_AtkRelease), this);
+	}
+}
+
+
+//void Character::callback_tick_AtkConsume(float deltaTime)
+//{
+//	if (curWpScale > defWpScale)
+//	{
+//		auto updated_scale = getWpScale() - 0.15f * deltaTime / 1.0f;
+//		setWpScale(updated_scale);
+//	}
+//	else {
+//		Director::getInstance()->getScheduler()->unschedule(schedule_selector(Character::callback_tick_AtkRelease), this);
+//	}
+//}
+
+
+//void Character::callback_tick_AtkCharge(float deltaTime)
+//{
+//	if (curWpScale < maxWpScale) {
+//		auto updated_scale = getWpScale() + 0.05f * deltaTime / 1.0f;
+//		setWpScale(updated_scale);
+//	}
+//	/*else {
+//		Director::getInstance()->getScheduler()->unschedule(schedule_selector(Character::callback_tick_AtkCharge), this);
+//	}*/
+//}
+
+
 
 
 //

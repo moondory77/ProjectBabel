@@ -1,6 +1,5 @@
 #ifndef __T_BLOCK_UNIT_H__
 #define __T_BLOCK_UNIT_H__
-#define PI 3.14159265358979323846
 
 #include "cocos2d.h"
 #include "OnGame/Character.h"

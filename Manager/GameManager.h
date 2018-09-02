@@ -1,5 +1,6 @@
 #ifndef __GameManager__H__
 #define __GameManager__H__
+#define PI 3.14159265358979323846
 
 #include "cocos2d.h"
 #include "Scene/Scene_Lobby.h"
@@ -8,6 +9,7 @@
 #include "Scene/Scene_PlayerInfo.h"
 #include "Scene/Scene_Record.h"
 #include "Scene/Scene_OnGame.h"
+
 
 USING_NS_CC;
 
@@ -36,6 +38,21 @@ static inline float DivForVertical(Sprite* target){
 static inline float DivForHorizontal(Sprite* target){
 	return winSize().width / (target->getContentSize().width);
 };
+
+static inline float getTowardAngle(Vec2 toward_vec) 
+{
+	//float converted = CC_RADIANS_TO_DEGREES(ccpToAngle(toward_vec)) + 360.0f;
+
+	//if (converted < 360.0f)
+	//	return converted;
+	//else
+	//	return converted - 360.0f;
+
+
+	return CC_RADIANS_TO_DEGREES(ccpToAngle(toward_vec));
+
+	
+}
 
 
 

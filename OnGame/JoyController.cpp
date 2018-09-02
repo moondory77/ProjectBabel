@@ -64,7 +64,6 @@ bool JoyController::init()
 	//jumpBtnActivated = true;
 	//defBtnActivated = true;
 
-
 	listener_Move = EventListenerTouchOneByOne::create();
 	listener_Move->onTouchBegan = CC_CALLBACK_2(JoyController::onTouchBegan_Move, this);
 	listener_Move->onTouchMoved = CC_CALLBACK_2(JoyController::onTouchMoved_Move, this);
@@ -113,7 +112,7 @@ void JoyController::onEnter()
 
 void JoyController::update(float deltaTime) {
 
-	//Slide 입력에 의한, JumpUp
+	//#1 - Slide 입력에 의한, JumpUp
 	if (isTouchedJump)
 	{
 		//잔상 이펙트
@@ -132,7 +131,7 @@ void JoyController::update(float deltaTime) {
 			auto move_up = MoveBy::create(0.08f, Point(0, 100));
 			auto sequence = Sequence::create(move_up, move_up->reverse(), nullptr);
 			sprBtnJump->runAction(sequence);
-			
+
 			mainChar->setOnStateInput(JUMP, UP);
 			inActivateBtnJump();
 
@@ -147,33 +146,31 @@ void JoyController::update(float deltaTime) {
 
 
 	//Swipe 입력에 의한, Attack
-	if (isTouchedAttack)
-	{	
-		//Attack Ready 상태
+	if (isTouchedAttack && (atkSwipe.curAngle > -90.0f))
+	{
+		//Ready -> Hit Transition
 		if (!mainChar->getOnStateInput(ATTACK, SWIPE) && !mainChar->getOnStateTrigger(ATTACK, SWIPE))
 		{
-			float between_angle = curAtkRot - marginAtkRot.first;
-			if (90.0f < between_angle && between_angle < 180.0f)
+			atkSwipe.backBound = min(atkSwipe.backBound, atkSwipe.curAngle);
+			if (atkSwipe.curAngle - atkSwipe.backBound > 100.0f)
 			{
-				marginAtkRot.first = 0.0f;
-				EffectManager::getInstance()->stopAttackCharge();
+				atkSwipe.backBound = 0.0f;
 				mainChar->setOnStateInput(ATTACK, SWIPE);
+				if (Director::getInstance()->getScheduler()->isScheduled(schedule_selector(JoyController::callback_tick_AtkCharge), this))
+					Director::getInstance()->getScheduler()->unschedule(schedule_selector(JoyController::callback_tick_AtkCharge), this);
 			}
 		}
-		//Attack Back 상태
+		//#2 - Hit -> Back(Ready) Transition
 		else if (mainChar->getOnStateInput(ATTACK, SWIPE) && mainChar->getOnStateTrigger(ATTACK, SWIPE))
 		{
-			float between_angle = curAtkRot - marginAtkRot.second;
-			if (-180.0f < between_angle && between_angle < -90.0f)
+			atkSwipe.hitBound = max(atkSwipe.hitBound, atkSwipe.curAngle);
+			if (atkSwipe.hitBound - atkSwipe.curAngle > 100.0f)
 			{
-				marginAtkRot.second = 0.0f;
-				EffectManager::getInstance()->runAttackCharge(4.0f, *sprBtnAttack);
+				atkSwipe.hitBound = 0.0f;
 				mainChar->setOffStateInput(ATTACK, SWIPE);
 			}
 		}
 	}
-
-
 
 	//if (!mainChar->isAttack()
 	//	&& !isTouchedAttack)
@@ -183,13 +180,11 @@ void JoyController::update(float deltaTime) {
 	//else
 		//inActivateBtnAttack();
 
-
 	if (!mainChar->getDirtyInputTrigger(JUMP, true)
 		&& !isTouchedJump)
 	{
 		activateBtnJump();
 	}
-
 
 	if (!mainChar->isDefense()
 		&& !isTouchedDefense)
@@ -198,7 +193,6 @@ void JoyController::update(float deltaTime) {
 	}
 	else
 		inActivateBtnDefense();
-
 
 	//if (!isTouchedLeft && !isTouchedRight
 	//	&& !mainChar->getInputLeft() && !mainChar->getInputRight())
@@ -360,27 +354,22 @@ void JoyController::onTouchCancelled_Jump(Touch* touch, Event* unused_event) {
 };
 
 
-
 bool JoyController::onTouchBegan_Attack(Touch* touch, Event* unused_event)
 {
 	if (isActiveBtnAttack && isListenerTargetTouched(touch, unused_event))
 	{
 		isTouchedAttack = true;
-		//CCLOG("Attack Btn Touched X: %f, Y: %f", initAttackPos.x, initAttackPos.y);
-		
-		auto touch_pos = touch->getLocation();	
-		curAtkRot = marginAtkRot.first = CC_RADIANS_TO_DEGREES(ccpToAngle(touch_pos - initAttackPos));
-		
+		auto touch_pos = touch->getLocation();
+
 		auto tint_in = TintTo::create(0.15f, Color3B(245, 222, 179));
 		sprBtnAttack->runAction(tint_in);
 		sprBtnAttack->setOpacity(100);
-			
-		draw_tmp = DrawNode::create();
-		draw_tmp->drawLine(initAttackPos, touch->getLocation(), Color4F::GREEN);
-		addChild(draw_tmp);
 
+		atkSwipeLine = DrawNode::create();
+		atkSwipeLine->drawLine(initAttackPos, touch->getLocation(), Color4F::GREEN);
+		addChild(atkSwipeLine);
 
-		EffectManager::getInstance()->runAttackCharge(4.0f, *sprBtnAttack);
+		Director::getInstance()->getScheduler()->schedule(schedule_selector(JoyController::callback_tick_AtkCharge), this, 1 / 30.f, false);
 		mainChar->setOnStateInput(ATTACK, TOUCH);	//터치 비트 on
 		return true;
 	}
@@ -392,16 +381,23 @@ void JoyController::onTouchMoved_Attack(Touch* touch, Event* unused_event)
 	{
 		auto touch_pos = touch->getLocation();
 		sprBtnAttack->setPosition(touch_pos);
-		curAtkRot = CC_RADIANS_TO_DEGREES(ccpToAngle(touch_pos - initAttackPos));
-	
-		if (mainChar->getOnStateTrigger(ATTACK, SWIPE))
-			marginAtkRot.second = max(marginAtkRot.second, curAtkRot);
-		else
-			marginAtkRot.first = min(marginAtkRot.first, curAtkRot);
 
-
-		draw_tmp->clear();
-		draw_tmp->drawLine(initAttackPos, touch_pos, Color4F::GREEN);
+		//swipe 유효반경 확보 시에만, atkAngle 측정
+		if (initAttackPos.getDistance(touch_pos) > 100.0f)
+		{
+			atkSwipe.isValidRange = true;
+			atkSwipe.curAngle = getTowardAngle(touch_pos - initAttackPos);
+			CCLOG("update angle to %.2f", atkSwipe.curAngle);
+			if (!EffectManager::getInstance()->isRunningEffect(ATTACK_CHARGE))
+				EffectManager::getInstance()->runAttackCharge(4.0f, *sprBtnAttack);
+		}
+		else {
+			atkSwipe.isValidRange = false;
+			if (EffectManager::getInstance()->isRunningEffect(ATTACK_CHARGE))
+				EffectManager::getInstance()->stopAttackCharge();
+		}
+		atkSwipeLine->clear();
+		atkSwipeLine->drawLine(initAttackPos, touch_pos, Color4F::GREEN);
 	}
 }
 void JoyController::onTouchEnded_Attack(Touch* touch, Event* unused_event)
@@ -411,15 +407,21 @@ void JoyController::onTouchEnded_Attack(Touch* touch, Event* unused_event)
 		auto tint_out = TintTo::create(0.15f, Color3B(255, 255, 255));
 		sprBtnAttack->runAction(tint_out);
 		sprBtnAttack->setOpacity(255);
-
 		sprBtnAttack->setPosition(initAttackPos);
 		mainChar->setOffStateInput(ATTACK, TOUCH);	//터치 비트 off
-		curAtkRot = marginAtkRot.first = marginAtkRot.second = 0.0f;
-		
-		EffectManager::getInstance()->stopAttackCharge();
-		isTouchedAttack = false;
 
-		draw_tmp->removeFromParentAndCleanup(true);
+		atkSwipe.curAngle = atkSwipe.hitBound = atkSwipe.backBound = 0.0f;
+		atkSwipe.isValidRange = false;
+
+		isTouchedAttack = false;
+		atkSwipeLine->removeFromParentAndCleanup(true);
+
+		if (Director::getInstance()->getScheduler()->isScheduled(schedule_selector(JoyController::callback_tick_AtkCharge), this))
+			Director::getInstance()->getScheduler()->unschedule(schedule_selector(JoyController::callback_tick_AtkCharge), this);
+		if (EffectManager::getInstance()->isRunningEffect(ATTACK_CHARGE))
+			EffectManager::getInstance()->stopAttackCharge();
+
+		Director::getInstance()->getScheduler()->schedule(schedule_selector(Character::callback_tick_AtkRelease), mainChar, 1 / 30.f, false);
 		return;
 	}
 }
@@ -427,7 +429,6 @@ void JoyController::onTouchCancelled_Attack(Touch* touch, Event* unused_event)
 {
 	onTouchEnded_Attack(touch, unused_event);
 }
-
 
 
 bool JoyController::onTouchBegan_Defense(Touch* touch, Event* unused_event) {
@@ -474,6 +475,7 @@ void JoyController::onTouchCancelled_Defense(Touch* touch, Event* unused_event) 
 };
 
 
+
 bool JoyController::isListenerTargetTouched(Touch* touch, Event* unused_event)
 {
 	Sprite* target = static_cast<Sprite*>(unused_event->getCurrentTarget());
@@ -484,6 +486,11 @@ bool JoyController::isListenerTargetTouched(Touch* touch, Event* unused_event)
 		return true;
 	else
 		return false;
+}
+void JoyController::callback_tick_AtkCharge(float deltaTime)
+{
+	if (atkSwipe.isValidRange)
+		mainChar->callback_tick_AtkCharge(deltaTime);
 }
 
 

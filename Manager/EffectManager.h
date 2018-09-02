@@ -26,14 +26,17 @@ enum EffectName {
 };
 
 //plist로부터 각 Frame을 Effect별로 나누어 저장
-struct EffectInfo {
+class EffectInfo {
 	
+public:
 	const string address;	//확장자를 제외한, 이미지 주소 string
 	Vector<SpriteFrame*> frames = {};	//Cache로부터 받아온 애니메이션 프레임
+	
 	Sprite* sprEffect = NULL;
 
 	EffectInfo(string& plist_address) : address(plist_address){};
 	~EffectInfo() {};
+
 };
 
 
@@ -71,12 +74,20 @@ public:
 	void removeEffectInfo(EffectName effect_name);
 	
 
+	inline bool isRunningEffect(EffectName effect_name) {
+		return (Effects[effect_name] != NULL) 
+			&& (Effects[effect_name]->sprEffect != NULL);
+	}
+
+
+
 	void runBladeWind(Point position, Vec2 direction, float size, bool clockwise, Layer& target_canvas);
 	void runBladeSlash(Point position, Vec2 direction, float size, Layer& target_canvas);
 	
 	void runAttackCharge(float max_size, Sprite& target_canvas);
 	void stopAttackCharge();
-	void callBack_AttackCharge(float dt);
+	
+	//void callBack_AttackCharge(float dt);
 	
 	
 	//void runAttackEffect(Character* mainChar, Layer* canvas, Vec2 direction, float size, bool clockwise);

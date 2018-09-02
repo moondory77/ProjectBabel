@@ -2,7 +2,7 @@
 #define __BACKGROUND_MANAGER__H__
 
 #include "cocos2d.h"
-#define KARMA_BG_FACTOR 0.014
+#define KARMA_BG_FACTOR 0.014	//1000을 최종 수치라 했을 때, per unit 당 move 시켜야 할 BG 높이
 
 USING_NS_CC;
 
@@ -29,20 +29,20 @@ private:
 
 	ParallaxNode *parallax;
 	Layer* layerBG;	
-				
+	
+
+	//FrameBG 리스트의 노드 -> 6개, curFrame는 밑에서 3번째 노드
 	FrameBG* topFrame;
 	FrameBG* bottomFrame;
-	FrameBG* curFrame;
+	FrameBG* curFrame;		
 
-
-	//게임 플레이의 진행정도를 나타내는 바로미터 (0 ~ 1000)
-	float curKarma = 0;
+	float curKarma = 0;		//플레이 진행률 수치화 (0 ~ 1000)
 	bool isBossFlag = false;
 public:
 
 	static BGManager* getInstance();
-	void loadBG();
-	
+
+	void loadBG();	
 	void moveBG(float input_karma);
 	ParallaxNode* getParallax() { return parallax; }
 };

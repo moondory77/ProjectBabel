@@ -12,6 +12,14 @@ enum InputBitType {
 	UP = 1, DOWN = 2
 };
 
+
+//struct AngleScope {
+//	float minAngle = 0.0f;
+//	float maxAngle = 0.0f;
+//	float curAngle = 0.0f;
+//};
+
+
 class JoyController : public Layer
 {
 private:
@@ -55,9 +63,18 @@ private:
 	Point initJumpPos;
 	Point initMovePos;
 
-	//min, max
-	pair<float, float> marginAtkRot = { 0, 0 };
-	float curAtkRot;
+
+	struct AngleScope {
+		float curAngle = 0.0f;
+		float backBound = 0.0f;
+		float hitBound = 0.0f;
+		bool isValidRange = false;
+	}atkSwipe;
+
+
+	//공격 swipe 인식의 min, max 기준각도(cur과 90도 차를 인식)
+	//Point curAtkPos = Point::ZERO;
+	DrawNode* atkSwipeLine;
 
 	Point curDefensePos;
 	Point curJumpPos;
@@ -66,12 +83,10 @@ private:
 
 	Character* mainChar;
 	Layer* canvas;
-	Sprite *cameraTarget;
 	Vec2 centerPos;	//원래 있어야 할 버튼 자리
 	Vec2 buttonPos;
 
 
-	DrawNode* draw_tmp;
 	//double defaultTimeScale;
 public:
 
@@ -82,11 +97,12 @@ public:
 	void onEnter();
 	void update(float dt);
 
+	//Sprite *cameraTarget;
+	//void setCameraTarget(Sprite* cameraTarget) { this->cameraTarget = cameraTarget; }
+	//Sprite* getCameraTarget() { return this->cameraTarget; }
 
 	void setCanvas(Layer* canvas) { this->canvas = canvas; }
 	Layer* getCanvas() { return this->canvas; }
-	void setCameraTarget(Sprite* cameraTarget) { this->cameraTarget = cameraTarget; }
-	Sprite* getCameraTarget() { return this->cameraTarget; }
 	void setMainChar(Character* ch) { this->mainChar = ch; }
 
 	void setVelocity(float v) { this->velocity = v; }
@@ -115,6 +131,10 @@ public:
 
 	//리스너 등록 타겟이 터치되었는지 여부 리턴
 	bool isListenerTargetTouched(Touch* touch, Event* unused_event);
+	
+	//터치 유효거리 범위때문에(validRange), 한번 랩핑한 무기증가 스케쥴
+	void callback_tick_AtkCharge(float deltaTime);
+
 
 	EventListenerTouchOneByOne * listener_Move;
 	virtual bool onTouchBegan_Move(Touch* touch, Event* unused_event);

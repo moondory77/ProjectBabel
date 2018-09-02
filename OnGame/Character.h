@@ -192,10 +192,6 @@ public:
 	pair<float, float> atkScopeAngle = { -45.0f, 178.0f };
 	float lapsedAtkTick;			//공격 애니메이션이 진행되는 시간 지표 (0 ~ 1 까지 변화)
 
-	void callback_tick_AtkScope(float deltaTime);
-	void callback_tick_AtkCharge(float deltaTime);
-	void callback_tick_AtkRelease(float deltaTime);
-
 	int getState() { return state; };
 	void getMotionLock(charActionType input_action);
 	void releaseMotionLock(charActionType input_action, charMotionElement target);
@@ -272,6 +268,9 @@ public:
 
 	float getWpLengthScale() { return curWpScale * sprWeapon->getContentSize().height / sprWeapon->getContentSize().width; }
 	float getWpScale() { return curWpScale; }
+	float getDefWpScale() { return defWpScale; }
+	float getMaxWpScale() { return maxWpScale; }
+
 	void setWpScale(float wp_scale);
 	float getBodyScale() { return bodyScale; }
 
@@ -336,11 +335,15 @@ public:
 	//bool isDead() ;
 	//bool isMove() ;
 
+	void callback_tick_AtkScope(float deltaTime);
+	void callback_tick_AtkCharge(float deltaTime);
+	void callback_tick_AtkRelease(float deltaTime);
+	//void callback_tick_AtkConsume(float deltaTime);
+
 	void callback_FinishSpcIntro(Ref* sender);
 	void callback_DelSpc(Ref* sender);
 	void callback_DelCrash(Ref* sender);
 	void callback_DelPress(Ref* sender);
-
 
 
 	//State Bit 전체 초기화

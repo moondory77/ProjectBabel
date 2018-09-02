@@ -50,7 +50,7 @@ void OnGame::initJoyController()
 	joyController = JoyController::create();
 	joyController->setMainChar(mainChar);
 	joyController->setCanvas(movingLayer);
-	joyController->setCameraTarget(cameraTarget);
+	//joyController->setCameraTarget(cameraTarget);
 	joyController->setLimitScreen(true);
 
 	fixedLayer->addChild(joyController);	
@@ -168,7 +168,6 @@ bool OnGame::init()
 
 	return true;
 }
-
 
 
 //단위시간에 대한, onGame씬 전체 스케쥴 관리
@@ -315,7 +314,6 @@ void OnGame::initCamera() {
 	cameraTarget->retain();
 
 	movingLayer->addChild(cameraTarget);
-	//BGManager::getInstance()->getParallax()->addChild(cameraTarget);
 	followCenter = CustomFollow::create(cameraTarget, Rect::ZERO);
 
 	movingLayer->runAction(followCenter);
@@ -324,13 +322,10 @@ void OnGame::initCamera() {
 void OnGame::setCameraPosition() {
 
 	//y축 follow
-	if (mainChar->getSprPositionY() >= winSize().height / 4)
-		cameraTarget->setPositionY(mainChar->getSprPosition().y + winSize().height / 4);
-	else
+	if(mainChar->getSprPositionY() < winSize().height / 3)
 		cameraTarget->setPositionY(winSize().height / 2);
-
-
-
+	else
+		cameraTarget->setPositionY(mainChar->getSprPosition().y + winSize().height / 6);
 
 
 	//x축 follow
@@ -747,8 +742,8 @@ void OnGame::initCharacter() {
 	mainChar
 		= new Character(
 			Point(winSize().width / 2, land),
-			6.5f,
-			90.0f,
+			7.4f,
+			65.0f,
 			40,
 			movingLayer);
 

@@ -79,9 +79,12 @@ void EffectManager::runBladeWind(Point position, Vec2 direction, float size, boo
 
 		auto fadeout = FadeOut::create(0.2f);
 		auto move_out = MoveBy::create(0.2f, direction);
-		
 		auto waving_out = Spawn::create(fadeout, move_out, nullptr);
-		auto remove_self = RemoveSelf::create(true);
+		auto remove_self = CallFunc::create([&]()
+		{
+			Effects[BLADE_WIND_1ST]->sprEffect->removeFromParentAndCleanup(true);
+			Effects[BLADE_WIND_1ST]->sprEffect = NULL;
+		});
 
 		if (clockwise)
 			Effects[BLADE_WIND_1ST]->sprEffect->runAction(Sequence::create(
@@ -90,8 +93,8 @@ void EffectManager::runBladeWind(Point position, Vec2 direction, float size, boo
 			Effects[BLADE_WIND_1ST]->sprEffect->runAction(Sequence::create(
 				Spawn::create(animAction, waving_out, nullptr), remove_self, nullptr));
 	}
-
 }
+
 void EffectManager::runBladeSlash(Point position, Vec2 direction, float size, Layer& target_canvas)
 {
 	if (Effects[BLADE_SLASH])
@@ -108,12 +111,15 @@ void EffectManager::runBladeSlash(Point position, Vec2 direction, float size, La
 		auto fadeout = FadeOut::create(0.3f);
 		auto scale_up = ScaleBy::create(0.4f, 1.7f);
 		auto waving_out = Spawn::create(fadeout, scale_up, nullptr);
-		auto remove_self = RemoveSelf::create(true);
+		auto remove_self = CallFunc::create([&]()
+		{
+			Effects[BLADE_SLASH]->sprEffect->removeFromParentAndCleanup(true);
+			Effects[BLADE_SLASH]->sprEffect = NULL;
+		});
 
-		Effects[BLADE_SLASH]->sprEffect->runAction(Sequence::create(waving_out, remove_self));
+		Effects[BLADE_SLASH]->sprEffect->runAction(Sequence::create(waving_out, remove_self, nullptr));
 	}
 }
-
 
 void EffectManager::runAttackCharge(float max_size, Sprite& target_canvas)
 {
@@ -121,17 +127,17 @@ void EffectManager::runAttackCharge(float max_size, Sprite& target_canvas)
 	{
 		Effects[ATTACK_CHARGE]->sprEffect = Sprite::create();
 		target_canvas.addChild(Effects[ATTACK_CHARGE]->sprEffect);
-
-		auto animation = Animation::createWithSpriteFrames(Effects[ATTACK_CHARGE]->frames, FRAME_DELAY * 1.5f);
+		auto animation = Animation::createWithSpriteFrames(Effects[ATTACK_CHARGE]->frames, FRAME_DELAY * 1.2f);
 		auto animAction = Animate::create(animation);
 
 		Effects[ATTACK_CHARGE]->sprEffect->setOpacity(230);
 		Effects[ATTACK_CHARGE]->sprEffect->setScale(1.5f);
 		Effects[ATTACK_CHARGE]->sprEffect->setPosition(Point(target_canvas.getContentSize().width / 2, target_canvas.getContentSize().height *0.7f));
 		Effects[ATTACK_CHARGE]->sprEffect->runAction(RepeatForever::create(animAction));
-		//Director::getInstance()->getScheduler()->schedule(schedule_selector(EffectManager::callBack_AttackCharge), this, 1 / 60.f, false);
 	}
 }
+
+
 void EffectManager::stopAttackCharge()
 {
 	if (Effects[ATTACK_CHARGE]->sprEffect != NULL)
@@ -143,12 +149,13 @@ void EffectManager::stopAttackCharge()
 
 	}
 };
-void EffectManager::callBack_AttackCharge(float deltaTime)
-{
-	if (Effects[ATTACK_CHARGE]->sprEffect->getScale() < 4.0f)
-		Effects[ATTACK_CHARGE]->sprEffect->setScale(Effects[ATTACK_CHARGE]->sprEffect->getScale() * 1.002f);
-};
 
+
+//void EffectManager::callBack_AttackCharge(float deltaTime)
+//{
+//	if (Effects[ATTACK_CHARGE]->sprEffect->getScale() < 4.0f)
+//		Effects[ATTACK_CHARGE]->sprEffect->setScale(Effects[ATTACK_CHARGE]->sprEffect->getScale() * 1.002f);
+//};
 
 
 //
