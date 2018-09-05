@@ -2,7 +2,7 @@
 #include <string.h>
 #include "Manager/GameManager.h"
 #include "Manager/BGManager.h"
-#include "Scene_PlayerInfo.h"
+#include "_Scene_PlayerInfo.h"
 
 Scene* PlayerInfo::createScene()
 {

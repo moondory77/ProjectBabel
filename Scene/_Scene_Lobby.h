@@ -4,10 +4,10 @@
 #include "cocos2d.h"
 #include "Plot/EventBox.h"
 #include "Plot/EventList.h"
-#include "Scene/Scene_Result.h"
-#include "Scene/Scene_Record.h"
-#include "Scene/Scene_OnReady.h"
-#include "Scene/Scene_PlayerInfo.h"
+#include "Scene/_Scene_Result.h"
+#include "Scene/_Scene_Record.h"
+#include "Scene/_Scene_OnReady.h"
+#include "Scene/_Scene_PlayerInfo.h"
 
 USING_NS_CC;
 

@@ -27,9 +27,10 @@ protected:
 
 	float unitScaleX;			//각 유닛의 정사각형 scaling을 위해
 	float unitLength;
-	int frameDamage = 0;
 	float rigidFactor = 1.0f;	//(공격 시)경직효과를 내는 상수	
 	int brokenCnt;				// 깨진 unit 갯수
+
+	int frameDamage = 0;
 
 
 	/* 빌딩을 형성하는 블럭 배열 (row * col)

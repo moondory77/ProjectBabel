@@ -145,6 +145,7 @@ void JoyController::update(float deltaTime) {
 	}
 
 
+
 	//Swipe 입력에 의한, Attack
 	if (isTouchedAttack && (atkSwipe.curAngle > -90.0f))
 	{
@@ -171,6 +172,7 @@ void JoyController::update(float deltaTime) {
 			}
 		}
 	}
+
 
 	//if (!mainChar->isAttack()
 	//	&& !isTouchedAttack)
@@ -388,6 +390,7 @@ void JoyController::onTouchMoved_Attack(Touch* touch, Event* unused_event)
 			atkSwipe.isValidRange = true;
 			atkSwipe.curAngle = getTowardAngle(touch_pos - initAttackPos);
 			CCLOG("update angle to %.2f", atkSwipe.curAngle);
+			
 			if (!EffectManager::getInstance()->isRunningEffect(ATTACK_CHARGE))
 				EffectManager::getInstance()->runAttackCharge(4.0f, *sprBtnAttack);
 		}

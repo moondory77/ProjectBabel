@@ -2,12 +2,12 @@
 #define __OBSTACLE_MANAGER_H__
 
 #include "cocos2d.h"
-#include "Scene/Scene_OnGame.h"
 #include "Obstacle/ObsContainer/Building/_T_BuildContainer.h"
 #include "Obstacle/ObsContainer/Ordeal/_T_OrdContainer.h"
 #include "Obstacle/ObsTexBatcher.h"
 #include "Util/EntryQueue.h"
 #include "Util/EntryQueue.cpp"
+#include "OnGame/_Scene_OnGame.h"
 
 
 USING_NS_CC;

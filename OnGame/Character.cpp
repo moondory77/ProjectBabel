@@ -719,9 +719,9 @@ void Character::playCharAction(charActionType targetAction) {
 		wpAction->setTag(MOTION_ACTION);
 
 		//attack dist, angle 증가시키는 tick 스케쥴 실행
+		lapsedAtkScore = 0.0f;
 		lapsedAtkTick = 0.0f;
-		Director::getInstance()->getScheduler()
-			->schedule(schedule_selector(Character::callback_tick_AtkScope), this, 1 / 60.f, false);
+		Director::getInstance()->getScheduler()->schedule(schedule_selector(Character::callback_tick_AtkScope), this, 1 / 60.f, false);
 
 		sprCircle->runAction(circleAction);
 		sprWeapon->runAction(wpAction);
@@ -838,7 +838,7 @@ void Character::playCharAction(charActionType targetAction) {
 			CallFunc::create([&]() {releaseMotionLock(actAtkJumpHit, WEAPON); }), nullptr);
 		wpAction->setTag(MOTION_ACTION);
 
-
+		lapsedAtkScore = 0.0f;
 		lapsedAtkTick = 0.0f;
 		Director::getInstance()->getScheduler()
 			->schedule(schedule_selector(Character::callback_tick_AtkScope), this, 1 / 60.f, false);
@@ -1250,7 +1250,6 @@ void Character::setCharFrame(charActionType targetAction)
 		break;
 	}
 }
-
 //State의 Add/Delete 에 맞게, 모션(Animation/Frame) 교체(true - addState, false - delState)
 void Character::changeCharMotion(bool isAdd, charStateType targetState)
 {
@@ -1415,17 +1414,6 @@ void Character::addState(charStateType aState)
 		{
 			updateAttackID();
 
-
-
-			////Attak Charge 중이었으면, Charge 해제와 동시에 Release 시작
-			//if (Director::getInstance()->getScheduler()->isScheduled(schedule_selector(Character::callback_tick_AtkCharge), this))
-			//{
-			//	Director::getInstance()->getScheduler()->unschedule(schedule_selector(Character::callback_tick_AtkCharge), this);
-			//	Director::getInstance()->getScheduler()->schedule(schedule_selector(Character::callback_tick_AtkRelease), this, 1 / 30.f, false);
-			//}
-
-
-
 			//방어 input이 있다면, 초기화
 			if (getDirtyInputTrigger(DEFENSE, true)) {
 				delState(DEFENSE);
@@ -1492,7 +1480,6 @@ void Character::addState(charStateType aState)
 			changeCharMotion(true, aState);
 	}
 }
-
 void Character::delState(charStateType dState)
 {
 	//존재하는 state의 삭제 명령에만 삭제
@@ -1513,6 +1500,8 @@ void Character::delState(charStateType dState)
 		changeCharMotion(false, dState);
 	}
 }
+
+
 
 void Character::positionUpdate(float deltaTime) {
 
@@ -1587,7 +1576,6 @@ void Character::positionUpdate(float deltaTime) {
 
 }
 
-
 void Character::stateUpdate(float deltaTime)
 {
 	//(collider의 위치)에 본체(sprChar)를 calibration 
@@ -1643,7 +1631,6 @@ void Character::stateUpdate(float deltaTime)
 	//}
 	//CCLOG("character state is %d", state);
 }
-
 void Character::stateTransitionUpdate()
 {
 	//#1 DEFENSE transition
@@ -1687,7 +1674,6 @@ void Character::stateTransitionUpdate()
 				{
 					setOnStateTrigger(ATTACK, SWIPE);
 					addState(ATTACK);
-
 					EffectManager::getInstance()->runBladeWind(sprChar->getPosition() + Vec2(0, getWpHeight()*0.15f), Vec2(-130, 160), 1.3f, false, *canvas);
 				}
 
@@ -1801,6 +1787,7 @@ void Character::stateTransitionUpdate()
 }
 
 
+
 //무기 Sprite와 그에따른 레이더의 크기 함께 Scale 
 void Character::setWpScale(float input_wp_scale) {
 
@@ -1820,6 +1807,7 @@ void Character::setWpScale(float input_wp_scale) {
 //공격(검 휘두름)에 시간에 따른 데미지 범위 변화 스케쥴 콜백
 void Character::callback_tick_AtkScope(float deltaTime)
 {
+	EffectManager::getInstance()->displayAtkScore(lapsedAtkScore, Point::ZERO, 2.0f, *canvas);
 	lapsedAtkTick += deltaTime / (FRAME_DELAY*1.5f * 7);
 
 	//tick time이 모두 지나면 스케쥴 해제
@@ -1828,7 +1816,6 @@ void Character::callback_tick_AtkScope(float deltaTime)
 		Director::getInstance()->getScheduler()->unschedule(schedule_selector(Character::callback_tick_AtkScope), this);
 	}
 };
-
 
 void Character::callback_FinishSpcIntro(Ref* sender) {
 

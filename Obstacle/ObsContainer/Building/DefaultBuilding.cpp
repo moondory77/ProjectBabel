@@ -19,7 +19,6 @@ DefaultBuilding::DefaultBuilding(const BuildContainer& bld)
 void DefaultBuilding::update(float deltaTime)
 {
 	frameDamage = 0;
-
 	//청크 재분류 필요시, 실행
 	if (!chunkingFinishFlag)
 		chunkBlocks();
@@ -99,6 +98,7 @@ void DefaultBuilding::update(float deltaTime)
 		}
 	}
 
+	mainChar.lapsedAtkScore += frameDamage;
 
 };
 

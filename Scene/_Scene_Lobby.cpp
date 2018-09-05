@@ -9,7 +9,7 @@
 #include "SimpleAudioEngine.h"
 #include <string.h>
 
-#include "Scene/Scene_Lobby.h"
+#include "Scene/_Scene_Lobby.h"
 
 
 USING_NS_CC;

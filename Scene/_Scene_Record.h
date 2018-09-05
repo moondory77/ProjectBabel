@@ -2,7 +2,7 @@
 #define __SCENE_RECORD_H__
 
 #include "cocos2d.h"
-#include "Scene/Scene_Lobby.h"
+#include "Scene/_Scene_Lobby.h"
 #include "Plot/EventPlayer.h"
 
 USING_NS_CC;

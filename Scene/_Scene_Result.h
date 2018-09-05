@@ -5,7 +5,7 @@
 #include "Plot/EventPlayer.h"
 #include "Plot/EventBox.h"
 #include "Plot/EventList.h"
-#include "Scene/Scene_Lobby.h"
+#include "Scene/_Scene_Lobby.h"
 
 USING_NS_CC;
 

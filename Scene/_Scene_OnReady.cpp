@@ -4,9 +4,7 @@
 
 #include "Plot/EventPlayer.h"
 #include "base/CCEventDispatcher.h"
-
-#include "Scene/Scene_OnReady.h"
-#include "Scene/Scene_Lobby.h"
+#include "_Scene_OnReady.h"
 #include <string.h>
 
 USING_NS_CC;

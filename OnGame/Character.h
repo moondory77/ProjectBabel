@@ -191,6 +191,7 @@ public:
 	pair<float, float> atkScopeRadius;
 	pair<float, float> atkScopeAngle = { -45.0f, 178.0f };
 	float lapsedAtkTick;			//공격 애니메이션이 진행되는 시간 지표 (0 ~ 1 까지 변화)
+	int lapsedAtkScore;
 
 	int getState() { return state; };
 	void getMotionLock(charActionType input_action);

@@ -5,6 +5,7 @@
 USING_NS_CC;
 using namespace std;
 
+
 enum ParticleType
 {
 	RUIN_COMPANY = 1,
@@ -38,6 +39,7 @@ class ParticlePool : public CCNode
 private:
 	const ParticleType type;
 	const string address;
+	
 	const int elementNum;
 	const int defaultSize;
 
@@ -52,7 +54,6 @@ public:
 	void pushToAvailableStack(int unit_idx);
 	void pushParticle();
 	void popParticle();
-
 
 	ParticlePool(ParticleType type, string plist_tex_address, int elem_sort, int default_size);
 	~ParticlePool();

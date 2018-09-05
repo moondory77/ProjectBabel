@@ -6,7 +6,7 @@
 ParticlePool::ParticlePool(ParticleType p_type, string plist_tex_address, int elem_sort, int default_size)
 	: type(p_type), address(plist_tex_address), elementNum(elem_sort), defaultSize(default_size)
 {
-	//해당 pool에 필요한 Sprite Frame 로드 (manager에 의해, Cache load를 확신가능)
+	//해당 pool에 필요한 Sprite Frame 로드 (manager에 의해 생성되기에, Cache load를 확신가능)
 	for (int i = 0; i < this->elementNum; i++){
 		frames.pushBack(SpriteFrameCache::getInstance()->getSpriteFrameByName(StringUtils::format("Frame_%d_Particle_%d.png", i, (int)type)));
 	}
@@ -21,14 +21,16 @@ ParticlePool::ParticlePool(ParticleType p_type, string plist_tex_address, int el
 	for (int i = 0; i < default_size; i++)
 		pushParticle();
 };
+
 ParticlePool::~ParticlePool()
 {
 	for (int i = 0; i < unitPool.size(); i++)
 		popParticle();
 
-	frames.clear();
 	batchNode->removeFromParent();
 	batchNode->release();
+	frames.clear();
+
 };
 
 
@@ -86,8 +88,6 @@ void ParticlePool::playParticleEffect(Point& world_pos)
 
 		//CCLOG("burst point is [%.1f, %.1f]", pos.x, pos.y);
 		unitPool[available_idx]->setPosition(world_pos);
-
-
 		unitPool[available_idx]->resetSystem();
 		unitPool[available_idx]->isRunning = true;
 		//CCLOG("now available particle is (%d / %d)", cursor, unitPool.size());
@@ -101,7 +101,6 @@ void ParticlePool::playParticleEffect(Point& world_pos)
 };
 
 
-
 //랩핑한 ParticleSystem 클래스의 create 함수 오버라이드
 ParticleCustomUnit* ParticleCustomUnit::create(ParticlePool& my_pool, int unit_idx, const string& filename)
 {
@@ -113,6 +112,7 @@ ParticleCustomUnit* ParticleCustomUnit::create(ParticlePool& my_pool, int unit_i
 	CC_SAFE_DELETE(ret);
 	return ret;
 }
+
 void ParticleCustomUnit::update(float deltaTime)
 {
 	super::update(deltaTime);	//기존 particleSystem의 update 처리

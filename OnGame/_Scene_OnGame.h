@@ -2,15 +2,15 @@
 #define __SCENE_ON_GAME__
 
 #include "cocos2d.h"
-#include "Scene/Scene_Record.h"
-#include "Scene/Scene_Lobby.h"
+#include "Scene/_Scene_Record.h"
+#include "Scene/_Scene_Lobby.h"
 
 #include "OnGame/CustomFollow.h"
 #include "OnGame/Character.h"
 #include "OnGame/JoyController.h"
 #include "OnGame/ParticleManager.h"
 
-#include "Util\/LineTracer.h"
+#include "Util/LineTracer.h"
 
 #include "Obstacle/ObsTexBatcher.h"
 #include "Obstacle/ObsContainer/Ordeal/_T_OrdContainer.h"

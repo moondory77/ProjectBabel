@@ -10,7 +10,7 @@
 #include "Manager/EffectManager.h"
 #include "OnGame/Character.h"
 #include "Obstacle/ObsManager.h"
-#include "Scene_OnGame.h"
+#include "_Scene_OnGame.h"
 
 USING_NS_CC;
 using namespace CocosDenshion;
@@ -119,9 +119,10 @@ bool OnGame::init()
 	this->addChild(particleMgr);
 	particleMgr->initPool(RUIN_COMPANY, "Particle_Ruin", 3, 40);
 
-	EffectManager::getInstance()->initEffectInfo(BLADE_SLASH, "Effect_0726", 1);
-	EffectManager::getInstance()->initEffectInfo(BLADE_WIND_1ST, "Effect_0726", 16);
-	EffectManager::getInstance()->initEffectInfo(ATTACK_CHARGE, "AttackCharge", 30);
+	EffectManager::getInstance()->initEffect(BLADE_SLASH, "Effect_0726", 1);
+	EffectManager::getInstance()->initEffect(BLADE_WIND_1ST, "Effect_0726", 16);
+	EffectManager::getInstance()->initEffect(ATTACK_CHARGE, "AttackCharge", 30);
+	EffectManager::getInstance()->initEffect(SCORE_NORMAL, "damage");
 
 	//SimpleAudioEngine::getInstance()->playBackgroundMusic("sound/stage_1.wav", true); //stage1 노래 스타트
 	//ParticleSystem *ParticleSpecial = ParticleSystemQuad::create("particles/particle_special.plist");
@@ -131,8 +132,8 @@ bool OnGame::init()
 	//BGManager::getInstance()->moveBG(2500);
 	//EffectManager::getInstance()->runSpecialEffect(mainChar, movingLayer);
 	//Director::getInstance()->schedule([&]() {}, 1.0f);
-	tracer = LineTracer::create();
-	movingLayer->addChild(tracer, 11);
+	
+	
 
 
 	obsMgr = new ObsManager(3, activeBuildList);
@@ -207,64 +208,9 @@ void OnGame::MainScheduler(float deltaTime) {
 
 		setCameraPosition();
 
-		//if (activeBuilding->getAttackDamage() > 0)
-		//{
-		//	//EffectManager::getInstance()->runAttackEffect(mainChar, movingLayer, mainChar->getAttackID());
-		//	//EffectManager::getInstance()->runDamageEffect(fixedLayer, activeBuilding->getAttackDamage(), mainChar->getAttackID());
-		//	auto move_left = MoveBy::create(0.1f, Vec2(5, 0));
-		//	auto move_right = move_left->reverse();
-		//	auto sequence = Sequence::create(move_left, move_right, nullptr);
-		//	this->runAction(Repeat::create(sequence, 2));
-		//	//무기 크기 갱신
-		//	float tmp_scale = mainChar->getWeaponScale();	
-		//	if (tmp_scale <= 6.5f)
-		//	{
-		//		tmp_scale += 0.015f;
-		//		CCLOG("now scale is %f", tmp_scale);
-		//		mainChar->setWeaponScale(tmp_scale);
-		//	}
-		//	
-		//	activeBuilding->initAttackDamage();	//다음 frame 에서의 데미지 재측정을 위해, 초기화
-		//}
 
-		//누르기 플래그 갱신하면서 쌓임 발생
-		//if (mainChar->isPressed() && !pressedFlag)
-		//{	
-		//	auto tremble_right = MoveBy::create(0.05f, Vec2(70, 0));
-		//	auto tremble_left = tremble_right->reverse();
-		//	auto tremble_seq = Repeat::create(Sequence::create(tremble_right, tremble_left, nullptr), 20);
-		//	auto shakeEarth = Sequence::create(tremble_seq, CallFuncN::create(CC_CALLBACK_1(OnGame::shakeEarthFinish, this)), nullptr);
-		//	
-		//	BGManager::getInstance()->moveBG(600);
-		//	movingLayer->runAction(shakeEarth);
-		//	pressedFlag = true;
-		//}
-
-
-		//gaugeUpdate(deltaTime);	
 		//DiagFragmentScheduler(deltaTime);
 
-
-		////현재 등장 빌딩이 다 부서진 후, 다음 빌딩으로 스케쥴 진행
-		//if (!activeBuilding->isAlive()) {
-		//	CCLOG("new building appears!!");
-		//	movingLayer->removeChild(activeBuilding);
-		//	delete(activeBuilding);
-		//	
-		//	Building_Scheduller();
-		//}
-
-
-		//gettimeofday(&timeValue, NULL);
-		//	//스페셜 어택 조작
-		//	if (newscale >= 3 && !is_special_effect)
-		//	{
-		//		is_special_effect = true;
-		//		particleSpecialEffect = ParticleSystemQuad::create("particles/special_effect_2.plist");
-		//		particleSpecialEffect->setScale(2);
-		//		particleSpecialEffect->setName("particleSpecialEffect");
-		//		mainChar->sprWeapon->addChild(particleSpecialEffect, 100, "particleSpecialEffect");
-		//	}
 	}
 
 }

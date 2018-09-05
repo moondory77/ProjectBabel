@@ -2,7 +2,7 @@
 #include "Manager/BGManager.h"
 #include "base/CCEventDispatcher.h"
 #include <string.h>
-#include "Scene_Record.h"
+#include "_Scene_Record.h"
 
 
 Scene* Record::createScene()

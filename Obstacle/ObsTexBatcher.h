@@ -31,9 +31,9 @@ enum ObsTexType
 
 struct BatchElement
 {
+	Texture2D* texture = NULL;
 	Vector<SpriteFrame*> frames = {};
 	Size frameSize = Size::ZERO;
-	Texture2D* texture = NULL;
 
 	SpriteBatchNode* batchNode = NULL;	//해당 텍스쳐를 렌더링하는 배치노드
 	BatchElement(ObsTexType type);
