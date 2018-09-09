@@ -13,14 +13,14 @@ Box* EventList::scanBox(int seq)
 
 	if (seq < 0 || seq > size)
 	{
-		CCLOG("잘못된 인덱스 접근. idx: %d, ListSize: %d", seq, size);
+		//CCLOG("잘못된 인덱스 접근. idx: %d, ListSize: %d", seq, size);
 		return NULL;
 	}
 	else {
 		for (int i = 0; i < seq; i++)
 			scan = scan->next;
 
-		CCLOG("Box 접근. idx : %d, ListSize: %d", seq, size);
+		//CCLOG("Box 접근. idx : %d, ListSize: %d", seq, size);
 		return scan;
 	}
 }
@@ -30,7 +30,7 @@ Box* EventList::scanBox(int seq)
 void EventList::deleteBox(int seq)
 {
 	if (seq == 0) {
-		CCLOG("헤더는 삭제할 수 없습니다.");
+		//CCLOG("헤더는 삭제할 수 없습니다.");
 	}
 	else
 	{
@@ -44,10 +44,10 @@ void EventList::deleteBox(int seq)
 			delete(scan);
 			size--;
 
-			if (seq == size)
-				CCLOG("Box Pop 성공! Current size : %d", size);
-			else
-				CCLOG("Box 삭제 성공! 삭제 idx: %d, Current size : %d", seq, size);
+			//if (seq == size)
+				//CCLOG("Box Pop 성공! Current size : %d", size);
+			//else
+				//CCLOG("Box 삭제 성공! 삭제 idx: %d, Current size : %d", seq, size);
 		}
 	}
 	return;
@@ -70,10 +70,10 @@ void EventList::insertBox(int seq, Box* box)
 		size++;
 
 		//push일 경우를 고려해서 출력메시지
-		if (seq == 0)
-			CCLOG("Box Push 성공! Current size : %d", size);
-		else
-			CCLOG("Box 삽입 성공! 삽입 idx: %d, Current size : %d", seq, size);
+		//if (seq == 0)
+			//CCLOG("Box Push 성공! Current size : %d", size);
+		//else
+			//CCLOG("Box 삽입 성공! 삽입 idx: %d, Current size : %d", seq, size);
 	}
 	return;
 }
@@ -113,10 +113,10 @@ void EventList::moveCurTo(int seq)
 	if (scan != NULL)
 	{
 		cur = scan;
-		CCLOG("커서 이동 성공! 현재 커서 idx: %d", seq);
+		//CCLOG("커서 이동 성공! 현재 커서 idx: %d", seq);
 	}
-	else
-		CCLOG("커서 이동 실패!");
+	//else
+		//CCLOG("커서 이동 실패!");
 
 	return;
 }

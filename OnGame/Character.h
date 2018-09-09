@@ -51,6 +51,8 @@ enum charMotionElement
 class Character : public CCNode
 {
 private:
+	SpriteBatchNode* batchNode;
+	Layer* UICanvas;
 
 	int state;				//캐릭터의 상태 스택
 	Point prevPos;			//운동 변화 추적을 위한 (이전 프레임의) 위치
@@ -82,8 +84,6 @@ private:
 	//구성액션 플래그들로부터 전체 모션 액션이 진행중인지를 판단해주는 플래그
 	bool isMotionPlaying = false;
 	bool isSpcIntroPlaying = false;	//스페셜 어택 모션 플레이 중 플래그
-	SpriteBatchNode* batchNode;
-
 
 	//Controller에서 들어오는 Input
 	map<charStateType, unsigned char> inputState = {
@@ -146,11 +146,11 @@ private:
 public:
 
 	Character();
-	Character(Point initPos, float gravity, float jumpVelocity, int specialDamage, Layer* canvas);
+	Character(Point initPos, float gravity, float jumpVelocity, int specialDamage);
 	~Character();
 
+
 	Action* shakeCanvas;
-	Layer* canvas;
 
 	void addState(charStateType aState);
 	void delState(charStateType dState);
@@ -159,6 +159,9 @@ public:
 	void stateUpdate(float deltaTime);
 	void stateTransitionUpdate();
 
+
+	void setUICanvas(Layer* ui_canvas) { UICanvas = ui_canvas; };
+	Layer* getUICanvas() { return UICanvas; }
 
 	/* 캐릭터 모션/State 관련 함수 */
 	void initMotionFrames();							//캐릭터 액션 애니메이션에 필요한 프레임 삽입

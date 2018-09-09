@@ -31,7 +31,6 @@ class MenuLobby : public cocos2d::CCNode
 	Sprite *spr_icon_character;
 	Sprite *spr_icon_setting;
 
-
 public:
 	static MenuLobby*  getInstance();
 

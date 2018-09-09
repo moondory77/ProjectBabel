@@ -4,10 +4,11 @@
 #include <string.h>
 #include <array>
 #include "base/CCEventDispatcher.h"
-#include "Manager/GameManager.h"
-#include "Manager/BGManager.h"
-#include "Manager/PopUps.h"
-#include "Manager/EffectManager.h"
+#include "System/GameManager.h"
+#include "System/BGManager.h"
+#include "System/PopUps.h"
+#include "VFX/EffectManager.h"
+
 #include "OnGame/Character.h"
 #include "Obstacle/ObsManager.h"
 #include "_Scene_OnGame.h"
@@ -27,7 +28,6 @@ bool isCinematic = false;
 //bool packFlag = false;	//빌딩의 묶음 번호 부여를 위한 플래그
 
 
-
 Scene* OnGame::createScene()
 {
 	//프리로딩
@@ -44,25 +44,126 @@ Scene* OnGame::createScene()
 	return scene;
 }
 
-
 void OnGame::initJoyController()
 {
 	joyController = JoyController::create();
 	joyController->setMainChar(mainChar);
-	joyController->setCanvas(movingLayer);
-	//joyController->setCameraTarget(cameraTarget);
+	joyController->setWorldCanvas(movingLayer);
 	joyController->setLimitScreen(true);
-
 	fixedLayer->addChild(joyController);	
-
 
 	listener_OnGame = EventListenerTouchOneByOne::create();
 	listener_OnGame->onTouchBegan = CC_CALLBACK_2(OnGame::onTouchBegan_OnGame, this);
 	listener_OnGame->onTouchEnded = CC_CALLBACK_2(OnGame::onTouchEnded_OnGame, this);
 	Director::getInstance()->getEventDispatcher()->addEventListenerWithFixedPriority(listener_OnGame, 1);
 	this->setKeypadEnabled(true); //device의 home, back button enable 해줌.
-
 }
+void OnGame::initCharacter() {
+	//initPos,  gravity,  jumpVelocity,  specialDamage
+	mainChar = new Character(Point(winSize().width / 2, land), 7.4f, 65.0f, 40);
+	movingLayer->addChild(mainChar, 3);
+	mainChar->setUICanvas(fixedLayer);
+}
+
+
+
+
+void OnGame::initBG() {
+
+	BGManager::getInstance()->loadBG();
+	movingLayer->addChild(BGManager::getInstance()->getParallax(), 1, "BG");
+
+	sprLand = Sprite::create("hill.png");
+	sprLand->setScale(DivForHorizontal(sprLand), DivForVertical(sprLand)*0.35f);
+	sprLand->setAnchorPoint(Point::ZERO);
+	movingLayer->addChild(sprLand, 1);
+
+	auto sprLand_left = Sprite::create("hill.png");
+	sprLand_left->setScale(DivForHorizontal(sprLand), DivForVertical(sprLand)*0.35f);
+	sprLand_left->setAnchorPoint(Point::ZERO);
+	sprLand_left->setPositionX(-winSize().width / 3 * 2);
+	movingLayer->addChild(sprLand_left, 1);
+
+	auto sprLand_mid = Sprite::create("hill.png");
+	sprLand_mid->setScale(DivForHorizontal(sprLand), DivForVertical(sprLand)*0.35f);
+	sprLand_mid->setAnchorPoint(Point::ZERO);
+	sprLand_mid->setPositionX(winSize().width / 2);
+	movingLayer->addChild(sprLand_mid, 1);
+
+	auto sprLand_right = Sprite::create("hill.png");
+	sprLand_right->setScale(DivForHorizontal(sprLand), DivForVertical(sprLand)*0.35f);
+	sprLand_right->setAnchorPoint(Point::ZERO);
+	sprLand_right->setPositionX(winSize().width / 4 * 3);
+	movingLayer->addChild(sprLand_right, 1);
+}
+
+
+
+
+
+void OnGame::initIcon() {
+
+	//설정 버튼(이것은 팝업 창을 띄우고 위치는 오른쪽 위로 잡음)
+	popup_setting_icon = Sprite::create("ui/pause.png");
+	popup_setting_icon->setAnchorPoint(Point(1, 1));
+	//popup_setting_icon->setPosition(Point(winSize.width / 8 * 7, winSize.height / 14 * 12));
+	popup_setting_icon->setPosition(Point(winSize().width - 20, winSize().height - 20));
+	fixedLayer->addChild(popup_setting_icon, 10, "setting");
+}
+void OnGame::initGauge() {
+	DefenseTime = 16.f;
+	NowDefenseGauge = 0.0;
+
+	auto def_gauge_back = Sprite::create("gauge/defense_gauge_bar.png");
+	def_gauge_back->setAnchorPoint(Point(0.5, 0));
+	def_gauge_back->setPosition(Point(joyController->getBtnDefense()->getPositionX(), joyController->getBtnDefense()->getPositionY() + joyController->getBtnDefense()->getBoundingBox().getMaxY() / 2));
+
+	def_gauge_back->setOpacity(160);
+	fixedLayer->addChild(def_gauge_back);
+
+	auto def_gauge = Sprite::create("gauge/defense_gauge.png");
+	//GaugeDefense->setScale(1.4f, 1.1f);
+	Point defense_gauge_pos = def_gauge_back->getPosition() + Vec2(0, def_gauge_back->getContentSize().height / 2);
+	//GaugeDefense->setPosition(gauge_loc);
+	GaugeDefense = CCProgressTimer::create(def_gauge);
+	GaugeDefense->setScale(1.4f, 1.1f);
+	GaugeDefense->setPosition(defense_gauge_pos);
+	GaugeDefense->setType(kCCProgressTimerTypeBar);
+	GaugeDefense->setMidpoint(ccp(0.5f, 0));	//중심점은 맨 끝
+	GaugeDefense->setBarChangeRate(ccp(0, 1));	//게이지는 y축 방향으로 변화
+												//GaugeDefense->setPercentage(100.0f);
+	fixedLayer->addChild(GaugeDefense);
+
+	MaxGaugeSize = def_gauge->getContentSize().height;
+	CCLOG("MaxGauge Size : %f", MaxGaugeSize);
+	//fixedLayer->addChild(GaugeDefense);
+}
+void OnGame::initCamera() {
+
+	cameraTarget = Sprite::create();
+	cameraTarget->setPosition(winSize().width / 2, winSize().height / 2);
+	cameraTarget->retain();
+
+	movingLayer->addChild(cameraTarget);
+	followCenter = CustomFollow::create(cameraTarget, Rect::ZERO);
+
+	movingLayer->runAction(followCenter);
+}
+
+void OnGame::onExit() {
+
+	obsMgr->removeFromParent();
+	obsMgr->release();
+
+	obsBatchMgr->removeFromParent();
+	obsBatchMgr->release();
+	
+	particleMgr->removeFromParent();
+	particleMgr->release();
+	
+	//TextureCache::getInstance()->removeUnusedTextures();
+	LayerColor::onExit();
+};
 
 
 
@@ -110,44 +211,45 @@ bool OnGame::init()
 	this->addChild(fixedLayer);
 
 
-	obsBatcher = new ObsTexBatcher();
-	movingLayer->addChild(obsBatcher, 5);
-	obsBatcher->initTex(APARTMENT);
-	obsBatcher->initTex(COMPANY);
+	obsBatchMgr = new ObsBatchManager();
+	movingLayer->addChild(obsBatchMgr, 5);
+	obsBatchMgr->initBatchUnit(APARTMENT);
+	obsBatchMgr->initBatchUnit(COMPANY);
+	//CCLOG(TextureCache::getInstance()->getCachedTextureInfo().c_str());
 
+	
 	particleMgr = new ParticleManager();
 	this->addChild(particleMgr);
 	particleMgr->initPool(RUIN_COMPANY, "Particle_Ruin", 3, 40);
+	//particleMgr->initPool(RUIN_APARTMENT, "Particle_Ruin", 3, 40);
+
 
 	EffectManager::getInstance()->initEffect(BLADE_SLASH, "Effect_0726", 1);
 	EffectManager::getInstance()->initEffect(BLADE_WIND_1ST, "Effect_0726", 16);
 	EffectManager::getInstance()->initEffect(ATTACK_CHARGE, "AttackCharge", 30);
 	EffectManager::getInstance()->initEffect(SCORE_NORMAL, "damage");
 
+
 	//SimpleAudioEngine::getInstance()->playBackgroundMusic("sound/stage_1.wav", true); //stage1 노래 스타트
-	//ParticleSystem *ParticleSpecial = ParticleSystemQuad::create("particles/particle_special.plist");
-	//ParticleSpecial->setDuration(-1);
-	//ParticleSpecial->setVisible(false);
-	//movingLayer->addChild(ParticleSpecial, 10, "ParticleSpecial");
 	//BGManager::getInstance()->moveBG(2500);
 	//EffectManager::getInstance()->runSpecialEffect(mainChar, movingLayer);
 	//Director::getInstance()->schedule([&]() {}, 1.0f);
 	
-	
+
 
 
 	obsMgr = new ObsManager(3, activeBuildList);
-	auto seed = new DefaultBuilding(obsBatcher->getTexBatcher(APARTMENT), *mainChar, *(particleMgr->Pools[RUIN_COMPANY]));
+	auto seed = new DefaultBuilding(*obsBatchMgr->getBatchUnit(APARTMENT), *mainChar, *(particleMgr->PoolTable[RUIN_COMPANY]));
 	seed->setMold(0.5f, 20, 12);
 	seed->setSpec(8, 6.0f, -13.0f, 210);
 	obsMgr->setProtoType(0, *seed);
 
-	seed = new DefaultBuilding(obsBatcher->getTexBatcher(COMPANY), *mainChar, *(particleMgr->Pools[RUIN_COMPANY]));
+	seed = new DefaultBuilding(*obsBatchMgr->getBatchUnit(COMPANY), *mainChar, *(particleMgr->PoolTable[RUIN_COMPANY]));
 	seed->setMold(0.7f, 25, 16);
 	seed->setSpec(8, 6.0f, -15.0f, 210);
 	obsMgr->setProtoType(1, *seed);
 
-	seed = new DefaultBuilding(obsBatcher->getTexBatcher(APARTMENT), *mainChar, *(particleMgr->Pools[RUIN_COMPANY]));
+	seed = new DefaultBuilding(*obsBatchMgr->getBatchUnit(APARTMENT), *mainChar, *(particleMgr->PoolTable[RUIN_COMPANY]));
 	seed->setMold(0.3f, 14, 8);
 	seed->setSpec(9, 6.0f, -12.0f, 210);
 	obsMgr->setProtoType(2, *seed);
@@ -171,10 +273,10 @@ bool OnGame::init()
 }
 
 
+
 //단위시간에 대한, onGame씬 전체 스케쥴 관리
 //매 frame 체크되어야 할 state는 모두 여기서 관리하도록
 void OnGame::MainScheduler(float deltaTime) {
-
 
 	//게임이 진행 중 일 때,
 	if (!mainChar->isDead()
@@ -215,54 +317,10 @@ void OnGame::MainScheduler(float deltaTime) {
 
 }
 
-
-void OnGame::initGauge() {
-	DefenseTime = 16.f;
-	NowDefenseGauge = 0.0;
-
-	auto def_gauge_back = Sprite::create("gauge/defense_gauge_bar.png");
-	def_gauge_back->setAnchorPoint(Point(0.5, 0));
-	def_gauge_back->setPosition(Point(joyController->getBtnDefense()->getPositionX(), joyController->getBtnDefense()->getPositionY() + joyController->getBtnDefense()->getBoundingBox().getMaxY() / 2));
-
-	def_gauge_back->setOpacity(160);
-	fixedLayer->addChild(def_gauge_back);
-
-	auto def_gauge = Sprite::create("gauge/defense_gauge.png");
-	//GaugeDefense->setScale(1.4f, 1.1f);
-	Point defense_gauge_pos = def_gauge_back->getPosition() + Vec2(0, def_gauge_back->getContentSize().height / 2);
-	//GaugeDefense->setPosition(gauge_loc);
-	GaugeDefense = CCProgressTimer::create(def_gauge);
-	GaugeDefense->setScale(1.4f, 1.1f);
-	GaugeDefense->setPosition(defense_gauge_pos);
-	GaugeDefense->setType(kCCProgressTimerTypeBar);
-	GaugeDefense->setMidpoint(ccp(0.5f, 0));	//중심점은 맨 끝
-	GaugeDefense->setBarChangeRate(ccp(0, 1));	//게이지는 y축 방향으로 변화
-	//GaugeDefense->setPercentage(100.0f);
-	fixedLayer->addChild(GaugeDefense);
-
-	MaxGaugeSize = def_gauge->getContentSize().height;
-	CCLOG("MaxGauge Size : %f", MaxGaugeSize);
-	//fixedLayer->addChild(GaugeDefense);
-}
-
-
 void OnGame::gaugeUpdate(float deltaTime) {
 	//tmp += 0.1f;
 	float cur_def_percentage = mainChar->curDefPoint / mainChar->maxDefPoint * 100.0f;
 	GaugeDefense->setPercentage(cur_def_percentage);
-}
-
-
-void OnGame::initCamera() {
-
-	cameraTarget = Sprite::create();
-	cameraTarget->setPosition(winSize().width / 2, winSize().height / 2);
-	cameraTarget->retain();
-
-	movingLayer->addChild(cameraTarget);
-	followCenter = CustomFollow::create(cameraTarget, Rect::ZERO);
-
-	movingLayer->runAction(followCenter);
 }
 
 void OnGame::setCameraPosition() {
@@ -298,18 +356,17 @@ void OnGame::setCameraPosition() {
 
 
 
-
-
-
-// 조작 (Touch 관련)
-inline bool CheckSlide(const Vec2 &start, const Vec2 &touch) {
-	float temp = abs((touch - start).getAngle());
-	return temp >= 2.0 || temp < 0.7;
-}
-inline bool CheckSpecial(const Vec2 &start, const Vec2 &touch) {
-	float temp = (touch - start).getAngle();
-	return temp > 1.3 && temp < 1.8;
-}
+//
+//// 조작 (Touch 관련)
+//inline bool CheckSlide(const Vec2 &start, const Vec2 &touch) {
+//	float temp = abs((touch - start).getAngle());
+//	return temp >= 2.0 || temp < 0.7;
+//}
+//inline bool CheckSpecial(const Vec2 &start, const Vec2 &touch) {
+//	float temp = (touch - start).getAngle();
+//	return temp > 1.3 && temp < 1.8;
+//}
+//
 
 
 
@@ -404,13 +461,10 @@ bool OnGame::onTouchBegan_OnGame(Touch* touches, Event *unused_event) {
 	return true;
 }
 
-
 void OnGame::onTouchMoved_OnGame(Touch* touches, Event *unuesd_event)
 {
 	//Point touchPoint = touches->getLocation();
 };
-
-
 
 void OnGame::onTouchEnded_OnGame(Touch* touches, Event *unuesd_event) {
 
@@ -459,7 +513,7 @@ void OnGame::onTouchEnded_OnGame(Touch* touches, Event *unuesd_event) {
 
 
 	if (startPoint.getDistance(touchPoint) >= winSize().height / 3
-		&& CheckSpecial(startPoint, touchPoint)
+		/*&& CheckSpecial(startPoint, touchPoint)*/
 		&& !mainChar->isDead())
 	{
 		//if() 필살기 게이지 꽉 찼는지 check해야함 //else이면 sound 나게 함.
@@ -468,7 +522,6 @@ void OnGame::onTouchEnded_OnGame(Touch* touches, Event *unuesd_event) {
 		{
 			//activeBuilding->setVelocity(0.f);
 			//isSpecialStart = true;
-
 			movingLayer->getChildByName("BG")->setColor(Color3B(0, 0, 0));
 
 			ParticleSystem *particleSpecialEffect = ParticleSystemQuad::create("particles/special_effect_2.plist");
@@ -547,7 +600,6 @@ void OnGame::onTouchEnded_Pause(Touch* touch, Event *unused_event)
 		//Director::getInstance()->replaceScene(pScene);
 		//log("touch5 OnGame");
 		//return true;
-
 		_eventDispatcher->removeAllEventListeners();
 		this->runAction(EventManager::getInstance()->sceneTransferAction(0.1f, LOBBY));
 		//Director::getInstance()->replaceScene(Lobby::createScene());
@@ -649,66 +701,6 @@ void OnGame::DefenseCheck(float deltaTime) {
 }
 
 
-void OnGame::initBG() {
-
-	//BGManager::getInstance()->initBG(); 
-	BGManager::getInstance()->loadBG();
-	movingLayer->addChild(BGManager::getInstance()->getParallax(), 1, "BG");
-
-
-	sprLand = Sprite::create("hill.png");
-	sprLand->setScale(DivForHorizontal(sprLand), DivForVertical(sprLand)*0.35f);
-	sprLand->setAnchorPoint(Point::ZERO);
-	movingLayer->addChild(sprLand, 1);
-
-	auto sprLand_left = Sprite::create("hill.png");
-	sprLand_left->setScale(DivForHorizontal(sprLand), DivForVertical(sprLand)*0.35f);
-	sprLand_left->setAnchorPoint(Point::ZERO);
-	sprLand_left->setPositionX(-winSize().width / 3 * 2);
-	movingLayer->addChild(sprLand_left, 1);
-
-	auto sprLand_mid = Sprite::create("hill.png");
-	sprLand_mid->setScale(DivForHorizontal(sprLand), DivForVertical(sprLand)*0.35f);
-	sprLand_mid->setAnchorPoint(Point::ZERO);
-	sprLand_mid->setPositionX(winSize().width / 2);
-	movingLayer->addChild(sprLand_mid, 1);
-
-
-	auto sprLand_right = Sprite::create("hill.png");
-	sprLand_right->setScale(DivForHorizontal(sprLand), DivForVertical(sprLand)*0.35f);
-	sprLand_right->setAnchorPoint(Point::ZERO);
-	sprLand_right->setPositionX(winSize().width / 4 * 3);
-	movingLayer->addChild(sprLand_right, 1);
-
-
-
-}
-void OnGame::initCharacter() {
-	//initPos,  gravity,  jumpVelocity,  specialDamage, Canvas
-	mainChar
-		= new Character(
-			Point(winSize().width / 2, land),
-			7.4f,
-			65.0f,
-			40,
-			movingLayer);
-
-	//movingLayer->addChild(mainChar, 5);
-}
-
-
-
-
-void OnGame::initIcon() {
-
-	//설정 버튼(이것은 팝업 창을 띄우고 위치는 오른쪽 위로 잡음)
-	popup_setting_icon = Sprite::create("ui/pause.png");
-	popup_setting_icon->setAnchorPoint(Point(1, 1));
-	//popup_setting_icon->setPosition(Point(winSize.width / 8 * 7, winSize.height / 14 * 12));
-	popup_setting_icon->setPosition(Point(winSize().width - 20, winSize().height - 20));
-	fixedLayer->addChild(popup_setting_icon, 10, "setting");
-}
-
 
 void OnGame::onKeyReleased(EventKeyboard::KeyCode keyCode, Event *event) {
 	if (keyCode == EventKeyboard::KeyCode::KEY_ESCAPE || keyCode == EventKeyboard::KeyCode::KEY_BACKSPACE) {
@@ -791,8 +783,6 @@ void OnGame::combo_presentation(int combo) { //점수 화면에 뜨게 하는 함수
 		}
 	}
 }
-
-
 
 
 

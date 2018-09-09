@@ -4,23 +4,19 @@
 #include "cocos2d.h"
 #include "Scene/_Scene_Record.h"
 #include "Scene/_Scene_Lobby.h"
-
-#include "OnGame/CustomFollow.h"
 #include "OnGame/Character.h"
 #include "OnGame/JoyController.h"
-#include "OnGame/ParticleManager.h"
-
-#include "Util/LineTracer.h"
-
-#include "Obstacle/ObsTexBatcher.h"
-#include "Obstacle/ObsContainer/Ordeal/_T_OrdContainer.h"
-#include "Obstacle/ObsContainer/Building/DefaultBuilding.h"
+#include "OnGame/CustomFollow.h"
+#include "VFX/ParticleManager.h"
+#include "Obstacle/ObsBatchManager.h"
+#include "Obstacle/Container/Ordeal/_T_OrdContainer.h"
+#include "Obstacle/Container/Building/DefaultBuilding.h"
 
 using namespace std;
 USING_NS_CC;
 
 class ObsManager;
-class OnGame : public cocos2d::LayerColor
+class OnGame : public LayerColor
 {
 private:
 	short stage,						//몇스테인지인가
@@ -68,21 +64,21 @@ private:
 	float newscale;
 	bool is_special_effect;
 	ParticleSystem *particleSpecialEffect;
-	BuildContainer* activeBuilding = NULL;
+	//BuildContainer* activeBuilding = NULL;
 
 
 public:
-	LineTracer* tracer;
 
-	ObsTexBatcher* obsBatcher;
+	ObsBatchManager* obsBatchMgr;
 	ObsManager* obsMgr;
 	ParticleManager* particleMgr;
-
 	vector<BuildContainer*> activeBuildList = {};
+	
 	//int prevSpecialID = 0;
 	//float prevSpecialDamage = 0.0f;
 	//bool flag = true;
 	
+
 	void shakeEarthFinish(Ref* sender) { this->pressedFlag = false; };
 	EventListenerTouchOneByOne *listener_pause;
 	virtual bool onTouchBegan_Pause(Touch* touch, Event *unused_event);
@@ -93,10 +89,11 @@ public:
 	virtual bool onTouchBegan_Setting(Touch* touch, Event *unused_event);
 	//virtual void onTouchMoved_Lobby(Touch* touch, Event *unused_event);
 	virtual void onTouchEnded_Setting(Touch* touch, Event *unused_event);
-
-
 	virtual bool init();
-	
+
+
+	virtual void onExit();
+	//virtual void onExitTransitionDidStart();
 	OrdContainer* diagfragment[10];
 	
 	

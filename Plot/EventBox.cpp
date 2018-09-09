@@ -1,4 +1,4 @@
-#include "Scene/Scene_Lobby.h"
+#include "Scene/_Scene_Lobby.h"
 #include "Plot/EventBox.h"
 #include "Plot/EventPlayer.h"
 #include "Manager/GameManager.h"
@@ -272,7 +272,7 @@ void Menu_OnReady_Intro_0::setEvent()
 	auto red_impulse = Spawn::create(vibe, rotate, tint_red, NULL);
 	act_extra = RepeatForever::create(red_impulse);
 	*/
-	CCLOG("Action making sucess");
+	//CCLOG("Action making sucess");
 
 	//** 이벤트 레이어의 각 타겟에 연결
 	setTarget(MenuOnReady::getInstance()->getHeroTarget(), act, 0);
@@ -439,7 +439,7 @@ void Menu_Result_Intro_0::setEvent()
 
 	act_extra = RepeatForever::create(impulse);
 	*/
-	CCLOG("Action making sucess");
+	//CCLOG("Action making sucess");
 	
 	//** 이벤트 레이어의 각 타겟에 연결
 	setTarget(MenuResult::getInstance()->getHeroTarget(), act, 0);

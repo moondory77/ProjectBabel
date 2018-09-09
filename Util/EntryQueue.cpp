@@ -1,6 +1,4 @@
 #include "EntryQueue.h"
-#include "Obstacle/ObsContainer/Building/_T_BuildContainer.h"
-#include "Obstacle/ObsContainer/Ordeal/_T_OrdContainer.h"
 
 template <typename T>
 EntryQueue<T>::EntryQueue() : queueSize(DEFAULT_QUEUE_SIZE + 1)

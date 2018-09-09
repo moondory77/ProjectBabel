@@ -1,16 +1,16 @@
 ﻿#define FRAME_DELAY 0.034	//60프레임 기준 1프레임은 0.017초 
 #include "Character.h"
 #include <String.h>
-#include "Manager/GameManager.h"
-#include "Manager/BGManager.h"
-#include "Manager/EffectManager.h"
+#include "System/GameManager.h"
+#include "System/BGManager.h"
+#include "VFX/EffectManager.h"
 
 
 Character::Character() {
 	state = (charStateType)NONE;
 }
 
-Character::Character(Point initPos, float gravity, float jumpVelocity, int powerSP, Layer* canvas)
+Character::Character(Point initPos, float gravity, float jumpVelocity, int powerSP)
 {
 
 	//character state 초기화
@@ -28,19 +28,18 @@ Character::Character(Point initPos, float gravity, float jumpVelocity, int power
 
 	curCharAction = actNone;
 	curDefPoint = maxDefPoint;
-	this->canvas = canvas;
 
-
+	//Layer 1 - sprChar
 	sprChar = Sprite::create("motions/default_land/1.png");
 	sprChar->setName("Body");
 	bodyScale = 0.108f;
 	sprChar->setScale(bodyScale * DivForHorizontal(sprChar));
 	sprChar->setPosition(initPos);
 	//sprChar->setAnchorPoint(Point(0.5f, 0));
-	canvas->addChild(sprChar, 2);
+	this->addChild(sprChar);
 
 
-	//weapon sprite가 올라갈 컨테이너
+	//Layer 2- sprCircle
 	sprCircle = Sprite::create("motions/circle.png");
 	sprCircle->setName("Circle");
 	sprCircle->setPosition(sprChar->getContentSize().width / 2, sprChar->getContentSize().height*0.36);
@@ -48,7 +47,7 @@ Character::Character(Point initPos, float gravity, float jumpVelocity, int power
 	sprCircle->setRotation(41);
 	sprChar->addChild(sprCircle);
 
-
+	//Layer 3 - sprWeapon
 	sprWeapon = Sprite::create("weapon/sword.png");
 	sprWeapon->setName("weapon");
 	defWpScale = 0.05f;
@@ -58,7 +57,7 @@ Character::Character(Point initPos, float gravity, float jumpVelocity, int power
 	sprWeapon->setPosition(sprCircle->getContentSize().width*0.74f, sprCircle->getContentSize().height / 2);
 	sprCircle->addChild(sprWeapon);	//더미용 원 => 위에 검 올림
 
-
+	//Layer  1 - collider Character
 	colliderChar = LayerColor::create();
 	colliderChar->setColor(Color3B::BLUE);
 	colliderChar->ignoreAnchorPointForPosition(false);
@@ -68,19 +67,18 @@ Character::Character(Point initPos, float gravity, float jumpVelocity, int power
 	colliderChar->setPosition(initPos);	//sprChar와 함께 이동
 	colliderChar->setAnchorPoint(Point(0.5f, 0.6f));
 	colliderChar->setOpacity(0);
-	canvas->addChild(colliderChar, 3);
+	this->addChild(colliderChar);
 
-
-	//공격범위 체크를 위한 더미레이어
+	//Layer 1 - 0 공격범위 체크를 위한 더미레이어
 	attackRadar = LayerColor::create();
 	attackRadar->setColor(Color3B::RED);
 	attackRadar->ignoreAnchorPointForPosition(false);	//레이어의 앵커포인트 조절을 위해 필수
 	attackRadar->setAnchorPoint(Point(0.5, 0));
 	attackRadar->setPosition(sprChar->getContentSize().width / 2, sprChar->getContentSize().height*0.36);
 	attackRadar->setOpacity(0);
-	sprChar->addChild(attackRadar, 3);
+	sprChar->addChild(attackRadar);
 
-
+	//Layer 1 - 1
 	shieldRadar = LayerColor::create();
 	shieldRadar->setColor(Color3B::GREEN);
 	shieldRadar->ignoreAnchorPointForPosition(false);
@@ -91,23 +89,23 @@ Character::Character(Point initPos, float gravity, float jumpVelocity, int power
 	shieldRadar->setScaleY(shield_radar_scale / sprChar->getScale() / winAspectRatio() * 0.5f);
 	//shieldRadar->setScale(0.9f, 0.2f);
 	shieldRadar->setOpacity(0);
-	sprChar->addChild(shieldRadar, 6);
+	sprChar->addChild(shieldRadar);
 
 
-	//필살기범위를 지정해주는 더미레이더
-	specialRadar = LayerColor::create();
-	specialRadar->setColor(Color3B::BLUE);
-	specialRadar->ignoreAnchorPointForPosition(false);
-	specialRadar->setAnchorPoint(Point(0.5, 0));
-	specialRadar->setPosition(initPos);
-	//specialRadar->setScale(0.05f, 1.0f);
-	//specialRadar->setScale(DivForVertical(sprWeapon)*0.028f*weaponScale, 1.5f);
-	specialRadar->setOpacity(0);
-	//canvas->addChild(specialRadar, 5);
-	setWpScale(curWpScale);
+	////필살기범위를 지정해주는 더미레이더
+	//specialRadar = LayerColor::create();
+	//specialRadar->setColor(Color3B::BLUE);
+	//specialRadar->ignoreAnchorPointForPosition(false);
+	//specialRadar->setAnchorPoint(Point(0.5, 0));
+	//specialRadar->setPosition(initPos);
+	////specialRadar->setScale(0.05f, 1.0f);
+	////specialRadar->setScale(DivForVertical(sprWeapon)*0.028f*weaponScale, 1.5f);
+	//specialRadar->setOpacity(0);
+	////canvas->addChild(specialRadar, 5);
+		
+	setWpScale(curWpScale);	
 	initMotionFrames();
 }
-
 
 Character::~Character() {
 	//cocos2d::Director::getInstance()->getScheduler()->unschedule("CharacterUpdate", this);
@@ -413,7 +411,6 @@ void Character::releaseMotionLock(charActionType input_action, charMotionElement
 	}
 };
 
-
 int Character::chkAttckRadar(const Sprite& attackable_unit)
 {
 	auto unit_bound_box = attackable_unit.getBoundingBox();
@@ -472,8 +469,6 @@ int Character::chkDefenseRadar(const Sprite& defensable)
 
 
 
-//
-//
 ////호출된 frame 시점에, blk이 받는 damage를 계산
 //int Character::getAttackDamage(Block* blk)
 //{
@@ -528,8 +523,6 @@ int Character::chkDefenseRadar(const Sprite& defensable)
 //}
 //
 //
-
-
 
 //charAction에 대한 Animation 액션을 실행
 void Character::playCharAction(charActionType targetAction) {
@@ -1467,7 +1460,7 @@ void Character::addState(charStateType aState)
 			auto move_right = move_left->reverse();
 			auto sequence = Sequence::create(move_left, move_right, nullptr);
 			shakeCanvas = Repeat::create(sequence, 14);
-			canvas->runAction(shakeCanvas);
+			this->getParent()->runAction(shakeCanvas);
 			BGManager::getInstance()->moveBG(5);
 			return;
 		}
@@ -1500,7 +1493,6 @@ void Character::delState(charStateType dState)
 		changeCharMotion(false, dState);
 	}
 }
-
 
 
 void Character::positionUpdate(float deltaTime) {
@@ -1575,7 +1567,6 @@ void Character::positionUpdate(float deltaTime) {
 	}
 
 }
-
 void Character::stateUpdate(float deltaTime)
 {
 	//(collider의 위치)에 본체(sprChar)를 calibration 
@@ -1674,7 +1665,8 @@ void Character::stateTransitionUpdate()
 				{
 					setOnStateTrigger(ATTACK, SWIPE);
 					addState(ATTACK);
-					EffectManager::getInstance()->runBladeWind(sprChar->getPosition() + Vec2(0, getWpHeight()*0.15f), Vec2(-130, 160), 1.3f, false, *canvas);
+	
+					EffectManager::getInstance()->runBladeWind(sprChar->getPosition() + Vec2(0, getWpHeight()*0.15f), Vec2(-130, 160), 1.3f, false, *static_cast<Layer*>(getParent()));
 				}
 
 				//Attack Back (11 | 01)
@@ -1685,7 +1677,7 @@ void Character::stateTransitionUpdate()
 						playCharAction(actAtkJumpBack);
 					else
 						playCharAction(actAtkLandBack);
-					EffectManager::getInstance()->runBladeWind(sprChar->getPosition() + Vec2(0, getWpHeight()*0.15f), Vec2(-10, 80), 1.3f, true, *canvas);
+					EffectManager::getInstance()->runBladeWind(sprChar->getPosition() + Vec2(0, getWpHeight()*0.15f), Vec2(-10, 80), 1.3f, true, *static_cast<Layer*>(getParent()));
 				}
 			}
 		}
@@ -1786,8 +1778,6 @@ void Character::stateTransitionUpdate()
 	}
 }
 
-
-
 //무기 Sprite와 그에따른 레이더의 크기 함께 Scale 
 void Character::setWpScale(float input_wp_scale) {
 
@@ -1807,7 +1797,7 @@ void Character::setWpScale(float input_wp_scale) {
 //공격(검 휘두름)에 시간에 따른 데미지 범위 변화 스케쥴 콜백
 void Character::callback_tick_AtkScope(float deltaTime)
 {
-	EffectManager::getInstance()->displayAtkScore(lapsedAtkScore, Point::ZERO, 2.0f, *canvas);
+	EffectManager::getInstance()->displayAtkScore(lapsedAtkScore, Point::ZERO, 2.0f, *UICanvas);
 	lapsedAtkTick += deltaTime / (FRAME_DELAY*1.5f * 7);
 
 	//tick time이 모두 지나면 스케쥴 해제

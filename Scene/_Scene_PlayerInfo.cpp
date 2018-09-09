@@ -1,7 +1,7 @@
 #include "base/CCEventDispatcher.h"
 #include <string.h>
-#include "Manager/GameManager.h"
-#include "Manager/BGManager.h"
+#include "System/GameManager.h"
+#include "System/BGManager.h"
 #include "_Scene_PlayerInfo.h"
 
 Scene* PlayerInfo::createScene()

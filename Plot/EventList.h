@@ -33,12 +33,10 @@ public:
 
 	int getSize() { return this->size; }
 	Box* getHead() { return this->head; }
-
 	Box* scanBox(int seq);	//seq 번째의 Box 포인터 반환
 	
 	void insertBox(int seq, Box* box);	//seq 번째에 Box 삽입
 	void insertBox(int seq, Box box);
-
 	void deleteBox(int seq); //seq 번째 Box 삭제
 	
 	void pushBox(Box* box); //리스트 맨 끝에 Box 삽입

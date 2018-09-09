@@ -75,11 +75,10 @@ public:
 	}
 
 	virtual void setEvent() {}
-	virtual void startEvent()
-	{
+	virtual void startEvent(){
+	
 		//** 액션을 진행할 타겟들에 대해, 이전의 액션은 중지한다
-		for (int i = 0; i < this->size; i++)
-		{
+		for (int i = 0; i < this->size; i++){
 			this->targets[i]->stopAction(this->actions[i]);
 		}
 
@@ -243,7 +242,6 @@ class Menu_Character_Intro_0 : public ActionBox {
 
 public:
 	Menu_Character_Intro_0(Box* my_prev, Box *my_next) : ActionBox(my_prev, my_next, 1) {}
-
 	virtual void setEvent();
 };
 //무기, 뒤로가기 탭 fade in 
@@ -251,7 +249,6 @@ class Menu_Character_Intro_1 : public ActionBox {
 
 public:
 	Menu_Character_Intro_1(Box* my_prev, Box *my_next) : ActionBox(my_prev, my_next, 2) {}
-
 	virtual void setEvent();
 };
 
@@ -260,7 +257,6 @@ class Menu_Character_WTab_0 : public ActionBox {
 
 public:
 	Menu_Character_WTab_0(Box* my_prev, Box *my_next) : ActionBox(my_prev, my_next, 4) {}
-
 	virtual void setEvent();
 };
 //칼/방망이 탭 fade out
@@ -268,7 +264,6 @@ class Menu_Character_WTab_1 : public ActionBox {
 
 public:
 	Menu_Character_WTab_1(Box* my_prev, Box *my_next) : ActionBox(my_prev, my_next, 4) {}
-
 	virtual void setEvent();
 };
 
@@ -285,10 +280,8 @@ class Menu_Character_Outro_1 : public ActionBox {
 
 public:
 	Menu_Character_Outro_1(Box* my_prev, Box *my_next) : ActionBox(my_prev, my_next, 2) {}
-
 	virtual void setEvent();
 };
-
 
 
 //*************************** #Scene - OnReady	***************************************// 

@@ -1,6 +1,6 @@
 #include "OnGame/JoyController.h"
-#include "Manager/GameManager.h"
-#include "Manager/EffectManager.h"
+#include "System/GameManager.h"
+#include "VFX/EffectManager.h"
 
 JoyController::~JoyController()
 {}
@@ -138,7 +138,7 @@ void JoyController::update(float deltaTime) {
 			isTouchedJump = false;
 			if (isZoomIn) {
 				auto zoom_out = ScaleTo::create(0.15f, 1.0f);
-				canvas->runAction(zoom_out);
+				worldCanvas->runAction(zoom_out);
 				isZoomIn = false;
 			}
 		}
@@ -305,7 +305,7 @@ bool JoyController::onTouchBegan_Jump(Touch* touch, Event* unused_event) {
 	{
 		//CCLOG("Touch Rect W: %.2f, H: %.2f", target_size.width, target_size.height);
 		auto zoom_in = ScaleTo::create(0.15f, 1.13f);
-		canvas->runAction(zoom_in);
+		worldCanvas->runAction(zoom_in);
 		auto tint_in = TintTo::create(0.15f, Color3B(255, 160, 122));
 		sprBtnJump->runAction(tint_in);
 
@@ -333,7 +333,7 @@ void JoyController::onTouchEnded_Jump(Touch* touch, Event* unused_event) {
 
 	if (isZoomIn) {
 		auto zoom_out = ScaleTo::create(0.15f, 1.0f);
-		canvas->runAction(zoom_out);
+		worldCanvas->runAction(zoom_out);
 		isZoomIn = false;
 	}
 
@@ -389,7 +389,7 @@ void JoyController::onTouchMoved_Attack(Touch* touch, Event* unused_event)
 		{
 			atkSwipe.isValidRange = true;
 			atkSwipe.curAngle = getTowardAngle(touch_pos - initAttackPos);
-			CCLOG("update angle to %.2f", atkSwipe.curAngle);
+			//CCLOG("update angle to %.2f", atkSwipe.curAngle);
 			
 			if (!EffectManager::getInstance()->isRunningEffect(ATTACK_CHARGE))
 				EffectManager::getInstance()->runAttackCharge(4.0f, *sprBtnAttack);

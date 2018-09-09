@@ -1,7 +1,7 @@
 //#include "Util/LabelTypingEffect.h"
-#include "Manager/GameManager.h"
-#include "Manager/BGManager.h"
 
+#include "System/GameManager.h"
+#include "System/BGManager.h"
 #include "Plot/EventPlayer.h"
 #include "base/CCEventDispatcher.h"
 #include "_Scene_OnReady.h"

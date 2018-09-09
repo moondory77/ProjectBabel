@@ -82,11 +82,11 @@ private:
 
 
 	Character* mainChar;
-	Layer* canvas;
+	Layer* worldCanvas;
+	
+
 	Vec2 centerPos;	//원래 있어야 할 버튼 자리
 	Vec2 buttonPos;
-
-
 	//double defaultTimeScale;
 public:
 
@@ -101,8 +101,8 @@ public:
 	//void setCameraTarget(Sprite* cameraTarget) { this->cameraTarget = cameraTarget; }
 	//Sprite* getCameraTarget() { return this->cameraTarget; }
 
-	void setCanvas(Layer* canvas) { this->canvas = canvas; }
-	Layer* getCanvas() { return this->canvas; }
+	void setWorldCanvas(Layer* w_canvas) { this->worldCanvas = w_canvas; }
+	Layer* getWorldCanvas() { return this->worldCanvas; }
 	void setMainChar(Character* ch) { this->mainChar = ch; }
 
 	void setVelocity(float v) { this->velocity = v; }

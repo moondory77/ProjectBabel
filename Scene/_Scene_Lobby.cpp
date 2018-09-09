@@ -1,6 +1,6 @@
-﻿#include "Manager/GameManager.h"
-#include "Manager/BGManager.h"
-#include "Manager/PopUps.h"
+﻿#include "System/GameManager.h"
+#include "System/BGManager.h"
+#include "System/PopUps.h"
 
 #include "Plot/EventPlayer.h"
 #include "Plot/EventList.h"
