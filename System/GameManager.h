@@ -3,12 +3,12 @@
 #define PI 3.14159265358979323846
 
 #include "cocos2d.h"
-#include "Scene/_Scene_Lobby.h"
-#include "Scene/_Scene_OnReady.h"
-#include "Scene/_Scene_Result.h"
-#include "Scene/_Scene_PlayerInfo.h"
-#include "Scene/_Scene_Record.h"
-#include "OnGame/_Scene_OnGame.h"
+#include "Scene/_Lobby_Scene.h"
+#include "Scene/_OnReady_Scene.h"
+#include "Scene/_Result_Scene.h"
+#include "Scene/_PlayerInfo_Scene.h"
+#include "Scene/_Record_Scene.h"
+#include "OnGame/_OnGame_Scene.h"
 
 
 USING_NS_CC;

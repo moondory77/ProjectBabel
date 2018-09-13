@@ -7,10 +7,8 @@ BGManager* BGManager::BGManager_instance = NULL;
 
 BGManager* BGManager::getInstance() {
 
-	if (!BGManager_instance)
-	{
+	if (!BGManager_instance){
 		BGManager_instance = new BGManager();
-
 		BGManager_instance->initBG();
 	}
 	return BGManager_instance;

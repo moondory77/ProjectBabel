@@ -22,9 +22,9 @@ public:
 		}
 	};
 
-	Texture2D* joinTexLink(string full_tex_address);
-	void detachTexLink(string full_tex_address);
-	int getTexCnt(string full_tex_address);
+	Texture2D* joinTexLink(const string& full_tex_address);
+	void detachTexLink(const string& full_tex_address);
+	int getTexCnt(const string& full_tex_address);
 };
 
 

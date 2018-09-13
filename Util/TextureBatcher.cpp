@@ -1,6 +1,6 @@
 #include "TextureBatcher.h"
 
-Texture2D* TextureBatcher::joinTexLink(string full_tex_address)
+Texture2D* TextureBatcher::joinTexLink(const string& full_tex_address)
 {
 	Texture2D* tex = TextureCache::getInstance()->getTextureForKey(full_tex_address);
 
@@ -17,7 +17,7 @@ Texture2D* TextureBatcher::joinTexLink(string full_tex_address)
 }
 
 
-void TextureBatcher::detachTexLink(string full_tex_address)
+void TextureBatcher::detachTexLink(const string& full_tex_address)
 {
 	if (getTexCnt(full_tex_address) != 0)
 	{
@@ -32,7 +32,7 @@ void TextureBatcher::detachTexLink(string full_tex_address)
 }
 
 //texture pool의 address 검색을 통해, reference count를 검색한다
-int TextureBatcher::getTexCnt(string full_tex_address) {
+int TextureBatcher::getTexCnt(const string& full_tex_address) {
 
 	if (TexPool.find(string(full_tex_address)) != TexPool.end())
 	{

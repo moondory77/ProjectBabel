@@ -2,7 +2,7 @@
 
 #include "System/GameManager.h"
 #include "System/BGManager.h"
-#include "Plot/EventPlayer.h"
+#include "Event/EventPlayer.h"
 #include "base/CCEventDispatcher.h"
 #include "_Scene_OnReady.h"
 #include <string.h>

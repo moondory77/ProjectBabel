@@ -1,7 +1,7 @@
 #include <stddef.h>
 #include "System/PopUps.h"
 #include "System/GameManager.h"
-#include "Scene/_Scene_Lobby.h"
+#include "Scene/_Lobby_Scene.h"
 
 
 PopUpSetting* PopUpSetting::PopUpSetting_instance = NULL;

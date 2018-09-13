@@ -11,9 +11,10 @@
 
 #include "OnGame/Character.h"
 #include "Obstacle/ObsManager.h"
-#include "_Scene_OnGame.h"
+#include "_OnGame_Scene.h"
 
 USING_NS_CC;
+
 using namespace CocosDenshion;
 using namespace std;
 
@@ -138,6 +139,8 @@ void OnGame::initGauge() {
 	CCLOG("MaxGauge Size : %f", MaxGaugeSize);
 	//fixedLayer->addChild(GaugeDefense);
 }
+
+
 void OnGame::initCamera() {
 
 	cameraTarget = Sprite::create();
@@ -149,6 +152,7 @@ void OnGame::initCamera() {
 
 	movingLayer->runAction(followCenter);
 }
+
 
 void OnGame::onExit() {
 
@@ -213,6 +217,7 @@ bool OnGame::init()
 
 	obsBatchMgr = new ObsBatchManager();
 	movingLayer->addChild(obsBatchMgr, 5);
+	
 	obsBatchMgr->initBatchUnit(APARTMENT);
 	obsBatchMgr->initBatchUnit(COMPANY);
 	//CCLOG(TextureCache::getInstance()->getCachedTextureInfo().c_str());

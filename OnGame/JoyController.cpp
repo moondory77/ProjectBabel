@@ -95,6 +95,7 @@ bool JoyController::init()
 
 	return true;
 }
+
 void JoyController::onEnter()
 {
 	Layer::onEnter();

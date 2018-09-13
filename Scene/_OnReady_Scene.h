@@ -2,7 +2,7 @@
 #define __SCENE_ON_READY_H__
 
 #include "cocos2d.h"
-#include "Plot/EventList.h"
+#include "Event/EventList.h"
 #include "Scene/_Scene_Lobby.h"
 
 USING_NS_CC;

@@ -2,8 +2,8 @@
 #define __SCENE_ON_GAME__
 
 #include "cocos2d.h"
-#include "Scene/_Scene_Record.h"
-#include "Scene/_Scene_Lobby.h"
+#include "Scene/_Record_Scene.h"
+#include "Scene/_Lobby_Scene.h"
 #include "OnGame/Character.h"
 #include "OnGame/JoyController.h"
 #include "OnGame/CustomFollow.h"

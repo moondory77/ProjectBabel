@@ -12,14 +12,6 @@ enum InputBitType {
 	UP = 1, DOWN = 2
 };
 
-
-//struct AngleScope {
-//	float minAngle = 0.0f;
-//	float maxAngle = 0.0f;
-//	float curAngle = 0.0f;
-//};
-
-
 class JoyController : public Layer
 {
 private:
@@ -97,9 +89,6 @@ public:
 	void onEnter();
 	void update(float dt);
 
-	//Sprite *cameraTarget;
-	//void setCameraTarget(Sprite* cameraTarget) { this->cameraTarget = cameraTarget; }
-	//Sprite* getCameraTarget() { return this->cameraTarget; }
 
 	void setWorldCanvas(Layer* w_canvas) { this->worldCanvas = w_canvas; }
 	Layer* getWorldCanvas() { return this->worldCanvas; }
@@ -132,10 +121,11 @@ public:
 	//리스너 등록 타겟이 터치되었는지 여부 리턴
 	bool isListenerTargetTouched(Touch* touch, Event* unused_event);
 	
-	//터치 유효거리 범위때문에(validRange), 한번 랩핑한 무기증가 스케쥴
+	//터치 유효거리 범위때문에(validRange), 한번 랩핑한 무기 비대화 스케쥴
 	void callback_tick_AtkCharge(float deltaTime);
 
 
+	//각 컨트롤러 파츠의 동작을 명확히 하기 위해, 객체 sprite에 리스너 등록
 	EventListenerTouchOneByOne * listener_Move;
 	virtual bool onTouchBegan_Move(Touch* touch, Event* unused_event);
 	virtual void onTouchMoved_Move(Touch* touch, Event* unused_event);

@@ -2,9 +2,9 @@
 #define __SCENE_RESULT_H__
 
 #include "cocos2d.h"
-#include "Plot/EventPlayer.h"
-#include "Plot/EventBox.h"
-#include "Plot/EventList.h"
+#include "Event/EventPlayer.h"
+#include "Event/EventBox.h"
+#include "Event/EventList.h"
 #include "Scene/_Scene_Lobby.h"
 
 USING_NS_CC;

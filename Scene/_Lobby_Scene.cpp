@@ -2,17 +2,10 @@
 #include "System/BGManager.h"
 #include "System/PopUps.h"
 
-#include "Plot/EventPlayer.h"
-#include "Plot/EventList.h"
-#include "Plot/EventBox.h"
-#include "ui/CocosGUI.h"
 #include "SimpleAudioEngine.h"
 #include <string.h>
+#include "Scene/_Lobby_Scene.h"
 
-#include "Scene/_Scene_Lobby.h"
-
-
-USING_NS_CC;
 
 Scene* Lobby::createScene()
 {
@@ -24,36 +17,31 @@ bool Lobby::init()
 	if (!Scene::init()){
 		return false;
 	}
-	_eventDispatcher->removeAllEventListeners();	//현재 세팅되어 있는 모든 이벤트 리스너 해제
+
+	_eventDispatcher->removeAllEventListeners();
 	
-	//** Lobby 씬에 대한 리스너 생성 및 등록
-	listener_lobby = EventListenerTouchOneByOne::create();
-	listener_lobby->setSwallowTouches(true);
-	listener_lobby->onTouchBegan = CC_CALLBACK_2(Lobby::onTouchBegan_Lobby, this);
-	listener_lobby->onTouchEnded = CC_CALLBACK_2(Lobby::onTouchEnded_Lobby, this);
-	Director::getInstance()->getEventDispatcher()->addEventListenerWithFixedPriority(listener_lobby, 3);
+	////** Lobby 씬에 대한 리스너 생성 및 등록
+	//listener_lobby = EventListenerTouchOneByOne::create();
+	//listener_lobby->setSwallowTouches(true);
+	//listener_lobby->onTouchBegan = CC_CALLBACK_2(Lobby::onTouchBegan_Lobby, this);
+	//listener_lobby->onTouchEnded = CC_CALLBACK_2(Lobby::onTouchEnded_Lobby, this);
 
-	//진도  암시 배경, hill 배경 셋팅
-	//BGManager::getInstance()->loadBG(); 
-	//this->addChild(BGManager::getInstance()->getParallax());
-
-
-	
 	initBG();
 
-	//** EventPlayer 초기화시키고, Lobby 씬에 레이어로 삽입
-	MenuLobby::getInstance()->initMenuLobby();
-	this->addChild(MenuLobby::getInstance()->getLayer());
-
-	this->runAction(EventManager::getInstance()->getListenerSleep(3.5f, listener_lobby));
+	////** EventPlayer 초기화시키고, Lobby 씬에 레이어로 삽입
+	//MenuLobby::getInstance()->initMenuLobby();
+	//this->addChild(MenuLobby::getInstance()->getLayer());
+	//this->runAction(EventManager::getInstance()->getListenerSleep(3.5f, listener_lobby));	
 	//BGManager::getInstance()->moveBG(500);
-	cur_list = MenuLobby::getInstance()->getList();
-	
-	for (int i = 0; i < 2; i++){
-		cur_list->moveCurNext();
-		cur_list->scanCur()->setEvent();
-		cur_list->scanCur()->startEvent();
-	}
+	//cur_list = MenuLobby::getInstance()->getList();	
+	//for (int i = 0; i < 2; i++){
+	//	cur_list->moveCurNext();
+	//	cur_list->scanCur()->setEvent();
+	//	cur_list->scanCur()->startEvent();
+	//}
+
+
+
 
 	////** Case 1) 스테이지 클리어 후, 귀환하는 경우
 	//if (EventManager::getInstance()->getFromResult())
@@ -78,13 +66,12 @@ bool Lobby::init()
 	//EventManager::getInstance()->setFromResult(false);
 	return true;
 }
-
-
-// 배경 레이어(언덕그림 sub) 초기화
 void Lobby::initBG()
 {
 	BGManager::getInstance()->loadBG();
 	this->addChild(BGManager::getInstance()->getParallax());
+
+
 
 	//** #2 언덕 스프라이트(고정) layer
 	layer_bg_hill = LayerColor::create(Color4B::WHITE);
@@ -118,8 +105,7 @@ void Lobby::onTouchEnded_Lobby(Touch* touch, Event *unused_event)
 	if (!is_popup_on)
 	{
 		//** #1 - CharacterInfo 버튼을 눌렀을 때,
-		if (MenuLobby::getInstance()->getCharacterTarget()
-							->getBoundingBox().containsPoint(touchPoint))
+		if (MenuLobby::getInstance()->getCharacterTarget()->getBoundingBox().containsPoint(touchPoint))
 		{	
 			_eventDispatcher->removeAllEventListeners();
 
@@ -189,56 +175,58 @@ void Lobby::onTouchEnded_Lobby(Touch* touch, Event *unused_event)
 
 
 
-////////////////////////////////////********셋팅 이벤트 리스너*********////////////////////////////////
-bool Lobby::onTouchBegan_Setting(Touch* touch, Event *unused_event)
-{
-	
-	Point touchPoint = touch->getLocation();
-	/*
-	if (PopUpSetting::getInstance()->
-						spr_icon_bgm->getBoundingBox().containsPoint(touchPoint))
-		return true;
-	else if (PopUpSetting::getInstance()->
-						spr_icon_effect->getBoundingBox().containsPoint(touchPoint))
-		return true;
-	else if (PopUpSetting::getInstance()->
-						spr_icon_vibrate->getBoundingBox().containsPoint(touchPoint))
-		return true;
-	else if (PopUpSetting::getInstance()->
-						spr_icon_close->getBoundingBox().containsPoint(touchPoint))
-		return true;
-	else
-	*/
-		return true;
-	
-}
-void Lobby::onTouchEnded_Setting(Touch* touch, Event *unused_event)
-{
-	Point touchPoint = touch->getLocation();
-
-
-	if (PopUpSetting::getInstance()->spr_icon_bgm->getBoundingBox().containsPoint(touchPoint))
-	{
-		PopUpSetting::getInstance()->bgmToggle();
-	}
-	else if (PopUpSetting::getInstance()->spr_icon_effect->getBoundingBox().containsPoint(touchPoint))
-	{
-		PopUpSetting::getInstance()->effectToggle();
-	}
-
-	else if (PopUpSetting::getInstance()->spr_icon_vibrate->getBoundingBox().containsPoint(touchPoint))
-	{
-		PopUpSetting::getInstance()->vibrateToggle();
-	}
-	else if (PopUpSetting::getInstance()->spr_icon_close->getBoundingBox().containsPoint(touchPoint))
-	{
-		this->removeChild(PopUpSetting::getInstance()->getLayer());
-		_eventDispatcher->removeEventListener(listener_setting);
-		is_popup_on = false;
-	}
-}
-
-
+//
+//
+//////////////////////////////////////********셋팅 이벤트 리스너*********////////////////////////////////
+//bool Lobby::onTouchBegan_Setting(Touch* touch, Event *unused_event)
+//{
+//	
+//	Point touchPoint = touch->getLocation();
+//	/*
+//	if (PopUpSetting::getInstance()->
+//						spr_icon_bgm->getBoundingBox().containsPoint(touchPoint))
+//		return true;
+//	else if (PopUpSetting::getInstance()->
+//						spr_icon_effect->getBoundingBox().containsPoint(touchPoint))
+//		return true;
+//	else if (PopUpSetting::getInstance()->
+//						spr_icon_vibrate->getBoundingBox().containsPoint(touchPoint))
+//		return true;
+//	else if (PopUpSetting::getInstance()->
+//						spr_icon_close->getBoundingBox().containsPoint(touchPoint))
+//		return true;
+//	else
+//	*/
+//		return true;
+//	
+//}
+//void Lobby::onTouchEnded_Setting(Touch* touch, Event *unused_event)
+//{
+//	Point touchPoint = touch->getLocation();
+//
+//
+//	if (PopUpSetting::getInstance()->spr_icon_bgm->getBoundingBox().containsPoint(touchPoint))
+//	{
+//		PopUpSetting::getInstance()->bgmToggle();
+//	}
+//	else if (PopUpSetting::getInstance()->spr_icon_effect->getBoundingBox().containsPoint(touchPoint))
+//	{
+//		PopUpSetting::getInstance()->effectToggle();
+//	}
+//
+//	else if (PopUpSetting::getInstance()->spr_icon_vibrate->getBoundingBox().containsPoint(touchPoint))
+//	{
+//		PopUpSetting::getInstance()->vibrateToggle();
+//	}
+//	else if (PopUpSetting::getInstance()->spr_icon_close->getBoundingBox().containsPoint(touchPoint))
+//	{
+//		this->removeChild(PopUpSetting::getInstance()->getLayer());
+//		_eventDispatcher->removeEventListener(listener_setting);
+//		is_popup_on = false;
+//	}
+//}
+//
+//
 
 
 /*

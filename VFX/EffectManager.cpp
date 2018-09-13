@@ -143,7 +143,6 @@ void EffectManager::stopAttackCharge()
 };
 
 
-
 void EffectManager::displayAtkScore(int score, Point position, float size, Layer& target_canvas)
 {
 	if (EffectTable[SCORE_NORMAL])

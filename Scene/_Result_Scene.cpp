@@ -2,8 +2,8 @@
 #include "System/BGManager.h"
 #include "Scene/_Scene_Result.h"
 #include "Scene/_Scene_Lobby.h"
-#include "Plot/EventPlayer.h"
-#include "Plot/EventBox.h"
+#include "Event/EventPlayer.h"
+#include "Event/EventBox.h"
 //#include "LabelTypingEffect.h"
 #include "base/CCEventDispatcher.h"
 #include <string.h>

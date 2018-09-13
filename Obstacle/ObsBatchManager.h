@@ -75,7 +75,6 @@ public:
 	void initBatchUnit(ObsTexType obs_tex_type);
 	void removeBatchUnit(ObsTexType obs_tex_type);
 
-
 	const ObsBatchUnit* getBatchUnit(ObsTexType obs_tex_type) {
 		
 		if (BatchUnitTable.find(obs_tex_type) == BatchUnitTable.end()){
