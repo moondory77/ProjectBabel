@@ -3,7 +3,7 @@
 
 #include "cocos2d.h"
 #include "Event/EventList.h"
-#include "Scene/_Scene_Lobby.h"
+#include "Scene/_Lobby_Scene.h"
 
 USING_NS_CC;
 

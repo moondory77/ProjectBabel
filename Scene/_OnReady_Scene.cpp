@@ -4,8 +4,9 @@
 #include "System/BGManager.h"
 #include "Event/EventPlayer.h"
 #include "base/CCEventDispatcher.h"
-#include "_Scene_OnReady.h"
 #include <string.h>
+#include "_OnReady_Scene.h"
+
 
 USING_NS_CC;
 

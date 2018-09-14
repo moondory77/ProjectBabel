@@ -17,9 +17,9 @@ enum sceneNum {
 	LOBBY = 0,
 	ON_READY = 1,
 	ON_GAME = 2,
-	RESULT = 3,
-	PLAYER_INFO = 4,
-	RECORD = 5,
+	//RESULT = 3,
+	//PLAYER_INFO = 4,
+	//RECORD = 5,
 };
 
 static inline Size winSize() {
@@ -39,19 +39,8 @@ static inline float DivForHorizontal(Sprite* target){
 	return winSize().width / (target->getContentSize().width);
 };
 
-static inline float getTowardAngle(Vec2 toward_vec) 
-{
-	//float converted = CC_RADIANS_TO_DEGREES(ccpToAngle(toward_vec)) + 360.0f;
-
-	//if (converted < 360.0f)
-	//	return converted;
-	//else
-	//	return converted - 360.0f;
-
-
+static inline float getTowardAngle(Vec2 toward_vec) {
 	return CC_RADIANS_TO_DEGREES(ccpToAngle(toward_vec));
-
-	
 }
 
 

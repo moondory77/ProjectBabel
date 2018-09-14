@@ -8,24 +8,25 @@
 using namespace std;
 USING_NS_CC;
 
-//EventThread를 상속받아, 실제 이벤트를 구체화 하는 각 클래스들
-//클래스명 (사용 장소(소단위) + 이벤트 이름)
+/*
+EventThread를 상속받아, 실제 이벤트를 구체화 하는 각 클래스들
+클래스명 (사용 장소(소단위) + 이벤트 이름)
+*/
 
 
-class MainLobby_HeroInOut : public EventThread
+class MainLobby_InOutMotion : public EventThread
 {
 	enum Targetname {
-		HERO,
+		HERO
 	};
 
 public:
-	MainLobby_HeroInOut() {
-		targetList.reserve(2);
+	MainLobby_InOutMotion() {
 		SpriteFrameCache::getInstance()->addSpriteFramesWithFile("motions/for_events/walk_up/walk_up.plist");
 		SpriteFrameCache::getInstance()->addSpriteFramesWithFile("motions/for_events/walk_down/walk_down.plist");
 		SpriteFrameCache::getInstance()->addSpriteFramesWithFile("default_back.plist");
 	};
-	~MainLobby_HeroInOut() {
+	~MainLobby_InOutMotion() {
 		targetList.clear();
 		SpriteFrameCache::getInstance()->removeSpriteFramesFromFile("motions/for_events/walk_up/walk_up.plist");
 		SpriteFrameCache::getInstance()->removeSpriteFramesFromFile("motions/for_events/walk_down/walk_down.plist");
@@ -36,7 +37,8 @@ public:
 };
 
 
-class StatusLobby_HeroInOut : public EventThread
+
+class StatusLobby_InOutMotion : public EventThread
 {
 	enum TargetName {
 		HERO,
@@ -45,15 +47,13 @@ class StatusLobby_HeroInOut : public EventThread
 	};
 
 public:
-
 	// 초기화 시, 필요한 만큼의 Box 확보
-	StatusLobby_HeroInOut(){
+	StatusLobby_InOutMotion(){
 		targetList.reserve(3);
 		SpriteFrameCache::getInstance()
 			->addSpriteFramesWithFile("motions/for_events/menu_cha/menu_character.plist");
 	};
-
-	~StatusLobby_HeroInOut() {
+	~StatusLobby_InOutMotion() {
 		targetList.clear();
 		SpriteFrameCache::getInstance()
 			->removeSpriteFramesFromFile("motions/for_events/menu_cha/menu_character.plist");
@@ -61,10 +61,6 @@ public:
 
 	void initThread(initializer_list<Sprite*> targets);
 };
-
-
-
-
 
 
 

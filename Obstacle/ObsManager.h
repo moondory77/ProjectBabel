@@ -7,7 +7,7 @@
 #include "Obstacle/ObsBatchManager.h"
 #include "Util/EntryQueue.h"
 #include "Util/EntryQueue.cpp"
-#include "OnGame/_Scene_OnGame.h"
+#include "OnGame/_OnGame_Scene.h"
 
 
 USING_NS_CC;

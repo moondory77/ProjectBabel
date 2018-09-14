@@ -10,34 +10,32 @@ using namespace std;
 
 class MainLobby : public LayerColor
 {
-	//사용 UI 목록
-	enum IconName{
+	//해당 subLayer에서 조작하는 icon target
+	enum IconName {
 		HERO, TITLE_LOGO,
-		START, RECORD, PLAYER_INFO, SETTING
+		START, RECORD, STATUS, SETTING
 	};
 
 	Sprite* iconTarget[6];
 	int iconTouchID[6];
-	void initUI();	//layer 위에 UI 스프라이트 맵핑
-
-	EventThread* threadHeroInOut;
+	void initUI();	
 
 public:
 
-	//create Func ->retain 적용함
-	static MainLobby* create();
+	MainLobby(Sprite* hero) {
+		iconTarget[HERO] = hero; 
+		assert(init());
+	};
+	~MainLobby() {};
+
 	virtual bool init();
 	virtual void onEnterTransitionDidFinish();
-	virtual void onExit();
-
 
 	EventListenerTouchOneByOne* listenerMain;
 	bool onTouchBegan_Main(Touch* touch, Event *unused_event);
 	void onTouchEnded_Main(Touch* touch, Event *unused_event);
 
 };
-
-
 
 
 class StatusLobby : public LayerColor
@@ -48,19 +46,30 @@ class StatusLobby : public LayerColor
 		SWORD, BAT, AXE
 	};
 
+	enum EventName {
+		InOutMotion,
+		WeaponChangeMotion
+	};
+
+	EventThread* eventList[2];	
 	Sprite* iconTarget[6];
 	int iconTouchID[6];
 	void initUI();	//layer 위에 UI 스프라이트 맵핑
 
-	EventThread* threadHeroInOut;
-	EventThread* threadWeaponChange;
 
 public:
-
-	static StatusLobby* create();
 	virtual bool init();
 	virtual void onEnterTransitionDidFinish();
 
+	StatusLobby(Sprite* hero) {
+		iconTarget[HERO] = hero; 
+		assert(init());
+	};	
+	~StatusLobby() {
+		for (int i = 0; i < 1; i++) {
+			eventList[i]->release();
+		}
+	};
 
 	EventListenerTouchOneByOne* listenerStatus;
 	bool onTouchBegan_Status(Touch* touch, Event *unused_event);
@@ -69,16 +78,14 @@ public:
 	EventListenerTouchOneByOne* listenerWpChange;
 	bool onTouchBegan_WpChange(Touch* touch, Event* unused_event);
 	void onTouchEnded_WpChange(Touch* touch, Event *unused_event);
-
 };
 
 
 
-
-class RecordLobby : public LayerColor
-{
-
-};
+//class RecordLobby : public LayerColor
+//{
+//
+//};
 
 
 #endif

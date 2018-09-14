@@ -1,7 +1,7 @@
 #include "AppDelegate.h"
-#include "Scene/_Scene_Lobby.h"
-#include "Scene/_Scene_OnReady.h"
-#include "OnGame/_Scene_OnGame.h"
+#include "Scene/_Lobby_Scene.h"
+//#include "Scene/_Scene_OnReady.h"
+#include "OnGame/_OnGame_Scene.h"
 
 USING_NS_CC;
 

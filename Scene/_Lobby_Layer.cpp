@@ -4,29 +4,13 @@
 
 
 ///////////////////////////////////////////////////////////////////////////
-/*Main Layer*/
+/*****************************Main Layer**********************************/
 ///////////////////////////////////////////////////////////////////////////
-
-MainLobby* MainLobby::create()
-{
-	MainLobby* main_lobby = new(std::nothrow) MainLobby();
-
-	if (main_lobby && main_lobby->init)
-	{
-		main_lobby->retain();	//override 했으니 필요 없?
-		return main_lobby;
-	}
-	CC_SAFE_DELETE(main_lobby);
-	return nullptr;
-}
-
-//create 할 때, 한번 호출
 bool MainLobby::init()
 {
 	if (!LayerColor::initWithColor(Color4B(0, 0, 0, 0), winSize().width, winSize().height)) {
 		return false;
 	}
-
 	listenerMain = EventListenerTouchOneByOne::create();
 	listenerMain->setSwallowTouches(true);
 	listenerMain->onTouchBegan = CC_CALLBACK_2(MainLobby::onTouchBegan_Main, this);
@@ -37,13 +21,7 @@ bool MainLobby::init()
 	for (int i = 0; i < 6; i++) {
 		iconTouchID[i] = -1;
 	}
-
 	initUI();	//각 아이콘 스프라이트 생성/배치
-	threadHeroInOut = new MainLobby_HeroInOut();
-	threadHeroInOut->initThread({iconTarget[HERO], iconTarget[TITLE_LOGO]});
-
-	threadHeroInOut->playBox();
-
 	return true;
 }
 void MainLobby::initUI()
@@ -68,12 +46,12 @@ void MainLobby::initUI()
 	iconTarget[RECORD]->setOpacity(0);
 	this->addChild(iconTarget[RECORD]);
 
-	iconTarget[PLAYER_INFO] = Sprite::create("layout/main/character.png");
-	iconTarget[PLAYER_INFO]->setScale(DivForHorizontal(iconTarget[PLAYER_INFO])*0.25f);
-	iconTarget[PLAYER_INFO]->setAnchorPoint(Point(0, 0.5));
-	iconTarget[PLAYER_INFO]->setPosition(Point(0, winSize().height*0.4f));
-	iconTarget[PLAYER_INFO]->setOpacity(0);
-	this->addChild(iconTarget[PLAYER_INFO]);
+	iconTarget[STATUS] = Sprite::create("layout/main/character.png");
+	iconTarget[STATUS]->setScale(DivForHorizontal(iconTarget[STATUS])*0.25f);
+	iconTarget[STATUS]->setAnchorPoint(Point(0, 0.5));
+	iconTarget[STATUS]->setPosition(Point(0, winSize().height*0.4f));
+	iconTarget[STATUS]->setOpacity(0);
+	this->addChild(iconTarget[STATUS]);
 
 	iconTarget[SETTING] = Sprite::create("layout/main/setting.png");
 	iconTarget[SETTING]->setScale(DivForHorizontal(iconTarget[SETTING])*0.25f);
@@ -83,28 +61,19 @@ void MainLobby::initUI()
 	this->addChild(iconTarget[SETTING]);
 }
 
-//로비 씬에 addChild 될 때마다 호출
+
+//해당 Sub Layer가 addChild 될 때마다
 void MainLobby::onEnterTransitionDidFinish()
 {
 	iconTarget[START]->runAction(FadeIn::create(1.5f));
 	iconTarget[RECORD]->runAction(FadeIn::create(1.5f));
-	iconTarget[PLAYER_INFO]->runAction(FadeIn::create(1.5f));
+	iconTarget[STATUS]->runAction(FadeIn::create(1.5f));
 	iconTarget[SETTING]->runAction(FadeIn::create(1.5f));
 
 	//터치 리스너는, 인트로 모션 후부터 사용 가능
 	this->runAction(Sequence::create(DelayTime::create(1.5f),
 		CallFunc::create([&]() {listenerMain->setEnabled(true); }), nullptr));
 }
-
-//로비 씬에서, remove 될 때마다 호출
-void MainLobby::onExit()
-{
-	iconTarget[START]->runAction(FadeOut::create(1.2f));
-	iconTarget[RECORD]->runAction(FadeOut::create(1.2f));
-	iconTarget[PLAYER_INFO]->runAction(FadeOut::create(1.2f));
-	iconTarget[SETTING]->runAction(FadeOut::create(1.2f));
-}
-
 
 bool MainLobby::onTouchBegan_Main(Touch* touch, Event *unused_event)
 {
@@ -119,8 +88,8 @@ bool MainLobby::onTouchBegan_Main(Touch* touch, Event *unused_event)
 		iconTouchID[RECORD] = touch->getID();
 		return true;
 	}
-	if (iconTarget[PLAYER_INFO]->getBoundingBox().containsPoint(touchPos)) {
-		iconTouchID[PLAYER_INFO] = touch->getID();
+	if (iconTarget[STATUS]->getBoundingBox().containsPoint(touchPos)) {
+		iconTouchID[STATUS] = touch->getID();
 		return true;
 	}
 	if (iconTarget[SETTING]->getBoundingBox().containsPoint(touchPos)) {
@@ -128,7 +97,6 @@ bool MainLobby::onTouchBegan_Main(Touch* touch, Event *unused_event)
 		return true;
 	}
 	return false;
-
 }
 void MainLobby::onTouchEnded_Main(Touch* touch, Event *unused_event)
 {
@@ -137,30 +105,38 @@ void MainLobby::onTouchEnded_Main(Touch* touch, Event *unused_event)
 	if (iconTarget[START]->getBoundingBox().containsPoint(touchPos)
 		&& (touch->getID() == iconTouchID[START]))
 	{
-		//threadHeroInOut
 		listenerMain->setEnabled(false);
-		this->removeFromParent();
-		this->release();
-
-		////(현재무기 탭) 메뉴 바 약간좌측으로 '감추는' 액션(spr_icon_weapon)
-		//iconTarget[WEAPON_TAB]->runAction(MoveBy::create(1.0f, Point(-winSize().width*0.6f, 0)));
-		//iconTarget[SWORD]->runAction(FadeIn::create(1.2f));
-		//iconTarget[BAT]->runAction(FadeIn::create(1.2f));
-		//iconTarget[BACK]->runAction(FadeOut::create(1.2f));
-
-		////리스너로 교체
-		//listenerStatus->setEnabled(false);
-		//this->runAction(Sequence::create(DelayTime::create(1.5f),
-		//	CallFunc::create([&]() {listenerWpChange->setEnabled(true); }), nullptr));
+		getParent()->getEventDispatcher()->dispatchCustomEvent("RushToField");
+	
+		iconTarget[RECORD]->runAction(FadeOut::create(1.2f));
+		iconTarget[STATUS]->runAction(FadeOut::create(1.2f));
+		iconTarget[SETTING]->runAction(FadeOut::create(1.2f));
+		iconTarget[START]->runAction(Sequence::create(FadeOut::create(1.2f),
+			CallFunc::create([&]() { this->removeFromParent(); }), nullptr));
 	}
 	else if (iconTarget[RECORD]->getBoundingBox().containsPoint(touchPos)
 		&& (touch->getID() == iconTouchID[RECORD]))
 	{
-
+		listenerMain->setEnabled(false);
+		getParent()->getEventDispatcher()->dispatchCustomEvent("ChangeToRecordLobby");
+	
+		iconTarget[START]->runAction(FadeOut::create(1.2f));
+		iconTarget[STATUS]->runAction(FadeOut::create(1.2f));
+		iconTarget[SETTING]->runAction(FadeOut::create(1.2f));
+		iconTarget[RECORD]->runAction(Sequence::create(FadeOut::create(1.2f),
+			CallFunc::create([&]() { this->removeFromParent(); }), nullptr));
 	}
-	else if (iconTarget[PLAYER_INFO]->getBoundingBox().containsPoint(touchPos)
-		&& (touch->getID() == iconTouchID[PLAYER_INFO]))
+	else if (iconTarget[STATUS]->getBoundingBox().containsPoint(touchPos)
+		&& (touch->getID() == iconTouchID[STATUS]))
 	{
+		listenerMain->setEnabled(false);
+		getParent()->getEventDispatcher()->dispatchCustomEvent("ChangeToStatusLobby");
+		
+		iconTarget[START]->runAction(FadeOut::create(1.2f));
+		iconTarget[RECORD]->runAction(FadeOut::create(1.2f));
+		iconTarget[SETTING]->runAction(FadeOut::create(1.2f));
+		iconTarget[STATUS]->runAction(Sequence::create(FadeOut::create(1.2f),
+			CallFunc::create([&]() { this->removeFromParent(); }), nullptr));
 
 	}
 	else if (iconTarget[SETTING]->getBoundingBox().containsPoint(touchPos)
@@ -169,28 +145,12 @@ void MainLobby::onTouchEnded_Main(Touch* touch, Event *unused_event)
 
 	}
 
-
 }
 
 
-
-
 ///////////////////////////////////////////////////////////////////////////
-/*Status Layer*/
+/****************************Status Layer*********************************/
 ///////////////////////////////////////////////////////////////////////////
-
-StatusLobby* StatusLobby::create() 
-{
-	StatusLobby* status_lobby = new(std::nothrow) StatusLobby();
-
-	if (status_lobby && status_lobby->init)
-	{
-		status_lobby->retain();	//override 했으니 필요 없?
-		return status_lobby;
-	}
-	CC_SAFE_DELETE(status_lobby);
-	return nullptr;
-}
 
 bool StatusLobby::init()
 {
@@ -212,15 +172,15 @@ bool StatusLobby::init()
 	_eventDispatcher->addEventListenerWithSceneGraphPriority(listenerWpChange, this);
 	listenerWpChange->setEnabled(false);
 
-	for (int i = 0; i < 5; i++){
+	for (int i = 0; i < 5; i++) {
 		iconTouchID[i] = -1;
 	}
 
 	initUI();	//아이콘 스프라이트 생성/배치
 
 	//필요한 이벤트 쓰레드 생성 및 초기화
-	threadHeroInOut = new StatusLobby_HeroInOut();
-	threadHeroInOut->initThread({iconTarget[HERO]});
+	eventList[InOutMotion] = new StatusLobby_InOutMotion();
+	eventList[InOutMotion]->initThread({ iconTarget[HERO] });
 	return true;
 }
 void StatusLobby::initUI()
@@ -252,10 +212,11 @@ void StatusLobby::initUI()
 	this->addChild(iconTarget[BAT]);
 }
 
-//씬에 삽입 시, 인트로부터 시작
+
+//씬 삽입 순간, 모션 이벤트 시작
 void StatusLobby::onEnterTransitionDidFinish()
 {
-	threadHeroInOut->playBox();
+	eventList[InOutMotion]->playBox();
 	iconTarget[WEAPON_TAB]->runAction(MoveBy::create(1.5f, Point(winSize().width*0.8f, 0)));
 	iconTarget[BACK]->runAction(FadeIn::create(1.5f));
 
@@ -287,14 +248,13 @@ void StatusLobby::onTouchEnded_Status(Touch* touch, Event *unused_event)
 	if (iconTarget[WEAPON_TAB]->getBoundingBox().containsPoint(touchPos)
 		&& (touch->getID() == iconTouchID[WEAPON_TAB]))
 	{
+		listenerStatus->setEnabled(false);
+
 		//(현재무기 탭) 메뉴 바 약간좌측으로 '감추는' 액션(spr_icon_weapon)
 		iconTarget[WEAPON_TAB]->runAction(MoveBy::create(1.0f, Point(-winSize().width*0.6f, 0)));
 		iconTarget[SWORD]->runAction(FadeIn::create(1.2f));
 		iconTarget[BAT]->runAction(FadeIn::create(1.2f));
 		iconTarget[BACK]->runAction(FadeOut::create(1.2f));
-
-		//리스너로 교체
-		listenerStatus->setEnabled(false);
 		this->runAction(Sequence::create(DelayTime::create(1.5f),
 			CallFunc::create([&]() {listenerWpChange->setEnabled(true); }), nullptr));
 	}
@@ -302,14 +262,23 @@ void StatusLobby::onTouchEnded_Status(Touch* touch, Event *unused_event)
 	else if (iconTarget[BACK]->getBoundingBox().containsPoint(touchPos)
 		&& (touch->getID() == iconTouchID[BACK]))
 	{
-		threadHeroInOut->playBox();	//무기 갈무리 모션
-		this->runAction(EventManager::getInstance()->sceneTransferAction(1.5f, LOBBY));
+		listenerStatus->setEnabled(false);
+		listenerWpChange->setEnabled(false);
+
+		getParent()->getEventDispatcher()->dispatchCustomEvent("ChangeToMainLobby");	
+		
+		eventList[InOutMotion]->playBox();
+		iconTarget[WEAPON_TAB]
+			->runAction(Sequence::create(
+				MoveBy::create(1.0f, Point(-winSize().width*0.7f, 0))
+				, Place::create(Point(-winSize().width * 0.8f, winSize().height * 0.8f))
+				, CallFunc::create([&]() {this->removeFromParent(); })
+				, nullptr));	
 	}
 
 	iconTouchID[WEAPON_TAB] = -1;
 	iconTouchID[BACK] = -1;
 }
-
 
 bool StatusLobby::onTouchBegan_WpChange(Touch* touch, Event* unused_event)
 {
@@ -350,7 +319,8 @@ void StatusLobby::onTouchEnded_WpChange(Touch* touch, Event *unused_event)
 
 
 
+
 ///////////////////////////////////////////////////////////////////////////
-/*Record Layer*/
+/****************************Record Layer*********************************/
 ///////////////////////////////////////////////////////////////////////////
 

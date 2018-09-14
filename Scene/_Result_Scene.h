@@ -5,7 +5,7 @@
 #include "Event/EventPlayer.h"
 #include "Event/EventBox.h"
 #include "Event/EventList.h"
-#include "Scene/_Scene_Lobby.h"
+#include "Scene/_Lobby_Scene.h"
 
 USING_NS_CC;
 

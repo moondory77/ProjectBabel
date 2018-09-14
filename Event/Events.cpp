@@ -3,7 +3,7 @@
 
 
 
-void MainLobby_HeroInOut::initThread(initializer_list<Sprite*> targets)
+void MainLobby_InOutMotion::initThread(initializer_list<Sprite*> targets)
 {
 	// 0 - hero, 1 - target_logo
 	setTarget(targets);
@@ -17,14 +17,18 @@ void MainLobby_HeroInOut::initThread(initializer_list<Sprite*> targets)
 				->getSpriteFrameByName(StringUtils::format("walk_up_%d.png", i)));
 		}
 		auto animation = Animation::createWithSpriteFrames(anim_frame);
-		animation->setDelayPerUnit(0.09f);
+		animation->setDelayPerUnit(0.13f);
 		auto walk_motion = RepeatForever::create(Animate::create(animation));
 		auto up = MoveBy::create(3.3f, Point(0, winSize().height*0.7));
-		auto walk_up = Spawn::create(walk_motion, up, NULL);
 
-		targetList[HERO]->runAction(Sequence::create(walk_up,
-			CallFunc::create([&]() {targetList[HERO]
-				->setSpriteFrame(SpriteFrameCache::getInstance()->getSpriteFrameByName("default_back.png")); })));
+		targetList[HERO]->runAction(walk_motion);
+		targetList[HERO]->runAction(
+			Sequence::create(up,
+				CallFunc::create([&]() {
+			targetList[HERO]->stopAllActions();
+			targetList[HERO]->setSpriteFrame(SpriteFrameCache::getInstance()->getSpriteFrameByName("default_back.png"));
+			moveCurNext();
+		}), nullptr));
 	}));
 
 
@@ -37,21 +41,28 @@ void MainLobby_HeroInOut::initThread(initializer_list<Sprite*> targets)
 				->getSpriteFrameByName(StringUtils::format("walk_down_%d.png", i + 1)));
 		}
 		auto animation = Animation::createWithSpriteFrames(anim_frame);
-		animation->setDelayPerUnit(0.09f);
-		auto walk_motion = RepeatForever::create(Animate::create(animation));
+		animation->setDelayPerUnit(0.13f);
+		auto walk_motion = Repeat::create(Animate::create(animation), 6);
 		auto down = MoveBy::create(3.3f, Point(0, -winSize().height*0.7));
-		auto walk_down = Spawn::create(walk_motion, down, NULL);
+		auto walk_down = Spawn::create(walk_motion, down, nullptr);
 
-		targetList[HERO]
-			->setSpriteFrame(SpriteFrameCache::getInstance()->getSpriteFrameByName("walk_down_0.png"));
-
-		targetList[HERO]->runAction(Sequence::create(DelayTime::create(0.4f), walk_down, nullptr));
-
+		targetList[HERO]->setSpriteFrame(SpriteFrameCache::getInstance()->getSpriteFrameByName("walk_down_1.png"));
+		targetList[HERO]->runAction(Sequence::create(
+			DelayTime::create(0.3f), 
+			walk_down,
+			CallFunc::create([&]() 
+		{
+			targetList[HERO]->stopAllActions();
+			Director::getInstance()->replaceScene(TransitionFade::create(1.0f, OnReady::createScene()));
+		}),
+			nullptr));
 	}));
+
+	moveCurNext();	//유효한 첫번째 이벤트박스로 커서이동
 }
 
 
-void StatusLobby_HeroInOut::initThread(initializer_list<Sprite*> targets)
+void StatusLobby_InOutMotion::initThread(initializer_list<Sprite*> targets)
 {
 	// 0 - hero, 1 - sword, 2 - bat
 	setTarget(targets);
@@ -69,12 +80,9 @@ void StatusLobby_HeroInOut::initThread(initializer_list<Sprite*> targets)
 
 		auto animation = Animation::createWithSpriteFrames(anim_frame);
 		animation->setDelayPerUnit(0.09f);
-
-		//** 액션 0 - 조금 딜레이 후, 검 휘두르는 액션 생성 (icon_hero 타겟)
 		auto delay = DelayTime::create(1.5f);
-		auto act = Sequence::create(delay, Animate::create(animation), 
+		auto act = Sequence::create(delay, Animate::create(animation),
 			CallFunc::create([&]() { moveCurNext(); }), nullptr);
-
 		targetList[HERO]->runAction(act);
 	}));
 
@@ -90,9 +98,16 @@ void StatusLobby_HeroInOut::initThread(initializer_list<Sprite*> targets)
 		auto animation = Animation::createWithSpriteFrames(anim_frame);
 		animation->setDelayPerUnit(0.09f);
 
-		//** 액션 0 - 조금 딜레이 후, 검 휘두르는 액션 생성 (icon_hero 타겟)
-		auto delay = DelayTime::create(1.0f);
-		auto act = Sequence::create(delay, Animate::create(animation)->reverse(), NULL);
+		auto act = Sequence::create(
+			DelayTime::create(0.7f),
+			Animate::create(animation)->reverse(),
+			DelayTime::create(0.5f),
+			CallFunc::create([&]()
+		{
+			targetList[HERO]->setSpriteFrame(SpriteFrameCache::getInstance()->getSpriteFrameByName("default_back.png"));
+			moveCurPrev();
+		}),
+			NULL);
 		targetList[HERO]->runAction(act);
 	}));
 

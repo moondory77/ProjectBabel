@@ -44,15 +44,15 @@ void EventManager::callback_sceneTransfer(Ref *sender, sceneNum scene_num)
 	case ON_GAME:
 		dst = TransitionFade::create(2, OnGame::createScene());
 		break;
-	case RESULT:
-		dst = TransitionFade::create(2, Result::createScene());
-		break;
-	case PLAYER_INFO:
-		dst = TransitionFade::create(2, PlayerInfo::createScene());
-		break;
-	case RECORD:
-		dst = TransitionFade::create(2, Record::createScene());
-		break;
+	//case RESULT:
+	//	dst = TransitionFade::create(2, Result::createScene());
+	//	break;
+	//case PLAYER_INFO:
+	//	dst = TransitionFade::create(2, PlayerInfo::createScene());
+	//	break;
+	//case RECORD:
+	//	dst = TransitionFade::create(2, Record::createScene());
+	//	break;
 	}
 
 	Director::getInstance()->replaceScene(dst);
