@@ -22,10 +22,8 @@ void BlockUnit::positionUpdate(float deltaTime)
 	float repulsion_factor = getUnitChunk().size();
 	curRepulsion = repulsion_factor * repulsion_factor  * 0.008f;
 
-	if (curRepulsion < -5.0f)
-		curRepulsion = -5.0f;
-	if (curRepulsion > 5.0f)
-		curRepulsion = 5.0f;
+	if (curRepulsion < -5.0f) curRepulsion = -5.0f;
+	if (curRepulsion > 5.0f) curRepulsion = 5.0f;
 
 	//업데이트 전, position 버퍼링
 	Point cur_pos = getPosition();
@@ -40,22 +38,20 @@ void BlockUnit::positionUpdate(float deltaTime)
 	//position 일괄 업데이트 
 	prevPos = cur_pos;
 	setPosition(updated_pos);
-	//CCLOG("curpos: %.2f, updatedPos : %.2f", cur_pos.y, updated_pos.y);
 
 	//충돌 발생 -> (Block - Character) X-Y 유효성 구별한 다음, Bounce Buffer에 저장
 	if (isCrashed(*mainChar))
 	{
-		//crash 직전 (Block <- 캐릭터 인스턴스) 상대 벡터
+		//crash 직전 (Block <- 캐릭터 본체) Relative Vector
 		prevRelativePos = this->prevPos - mainChar->getPrevPos();
-		//crash 직후 (Block <- 캐릭터 collider) 상대 벡터
+		//crash 직후 (Block <- 캐릭터 collider) Relative Vector
 		curRelativePos = updated_pos - mainChar->getColliderPosition();
 
-		//Delta 상대 벡터 (스프라이트 겹친만큼을 측정)
+		//Delta Relative Vector 
 		crashVec = curRelativePos - prevRelativePos;		
-		///충돌 직전의 Block과 캐릭터의 delta vector 정보 -> 어떤 충돌(x축, y축)인 지 필터링
+		//Crash Angle 측정 -> 어떤 충돌(x축, y축)인 지 필터링
 		crashAngle = CC_RADIANS_TO_DEGREES(ccpToAngle(mainChar->getPrevPos() - prevPos));
 
-	
 		//x축 유효 bounce
 		if ((120.0f < crashAngle && crashAngle <= 180.0f)
 			|| (-180.0f <= crashAngle && crashAngle < -120.0f)
@@ -92,7 +88,6 @@ void BlockUnit::stateUpdate(float deltaTime)
 
 		if (damage = mainChar->chkAttckRadar(*sprUnit))
 		{
-			//CCLOG("[%d][%d] was damaged by %d", rowIdx, colIdx, damage);
 			attackID = mainChar->getAttackID();
 
 			//데미지가 Block의 현재 체력 이상일 경우
@@ -111,10 +106,6 @@ void BlockUnit::stateUpdate(float deltaTime)
 			{
 				isAliveFlag = false;
 				container->setBrokenCnt(container->getBrokenCnt() + 1);
-
-				////////////////////좌표값 조정 필요//////////////////
-				//breakPos.x = sprUnit->getParent()->convertToWorldSpace(getPosition()).x;
-				//breakPos.y = getPosition().y;
 				container->bufferRemove.push_back(unitIdx);
 			}
 			else if (curStrength < maxStrength * 0.15f) {
@@ -191,13 +182,11 @@ void BlockUnit::updateForDefense() {
 	if (defenseID != mainChar->getDefenseID())
 	{
 		//mainChar->setOuterVelocity(container->getDeltaVelocity());
+		
 		//컨테이너의 가속도를 직접 변경 (다음 프레임부터 적용)
 		container->setVeloY(8.0f);
-
-		//container->bufferCrashDefense.pushBack(this);
 		defenseID = mainChar->getDefenseID();
 		mainChar->setOffStateInput(DEFENSE, TOUCH);
-		//CCLOG("Defense really effected!!");
 	}
 }
 
@@ -313,8 +302,6 @@ bool BlockUnit::isVisitable()
 	else
 		return false;
 }
-
-
 
 bool BlockUnit::isSearchable(int chunk_id, const Point& pos)
 {

@@ -6,12 +6,14 @@
 ///////////////////////////////////////////////////////////////////////////
 /*****************************Main Layer**********************************/
 ///////////////////////////////////////////////////////////////////////////
+
 bool MainLobby::init()
 {
 	if (!LayerColor::initWithColor(Color4B(0, 0, 0, 0), winSize().width, winSize().height)) {
 		return false;
 	}
 	listenerMain = EventListenerTouchOneByOne::create();
+	listenerMain->retain();
 	listenerMain->setSwallowTouches(true);
 	listenerMain->onTouchBegan = CC_CALLBACK_2(MainLobby::onTouchBegan_Main, this);
 	listenerMain->onTouchEnded = CC_CALLBACK_2(MainLobby::onTouchEnded_Main, this);
@@ -27,7 +29,7 @@ bool MainLobby::init()
 void MainLobby::initUI()
 {
 	iconTarget[TITLE_LOGO] = Sprite::create("layout/main/title.png");
-	iconTarget[TITLE_LOGO]->setScale(DivForHorizontal(iconTarget[TITLE_LOGO])*0.9f);
+	iconTarget[TITLE_LOGO]->setScale(DivForHorizontal(iconTarget[TITLE_LOGO])*0.7f);
 	iconTarget[TITLE_LOGO]->setPosition(Point(winSize().width*0.5f, winSize().height*0.85f));
 	iconTarget[TITLE_LOGO]->setOpacity(0);
 	this->addChild(iconTarget[TITLE_LOGO]);
@@ -61,19 +63,20 @@ void MainLobby::initUI()
 	this->addChild(iconTarget[SETTING]);
 }
 
-
 //해당 Sub Layer가 addChild 될 때마다
 void MainLobby::onEnterTransitionDidFinish()
 {
+	iconTarget[TITLE_LOGO]->runAction(FadeIn::create(2.0f));
 	iconTarget[START]->runAction(FadeIn::create(1.5f));
 	iconTarget[RECORD]->runAction(FadeIn::create(1.5f));
 	iconTarget[STATUS]->runAction(FadeIn::create(1.5f));
 	iconTarget[SETTING]->runAction(FadeIn::create(1.5f));
 
 	//터치 리스너는, 인트로 모션 후부터 사용 가능
-	this->runAction(Sequence::create(DelayTime::create(1.5f),
+	this->runAction(Sequence::create(DelayTime::create(2.0f),
 		CallFunc::create([&]() {listenerMain->setEnabled(true); }), nullptr));
 }
+
 
 bool MainLobby::onTouchBegan_Main(Touch* touch, Event *unused_event)
 {
@@ -107,11 +110,12 @@ void MainLobby::onTouchEnded_Main(Touch* touch, Event *unused_event)
 	{
 		listenerMain->setEnabled(false);
 		getParent()->getEventDispatcher()->dispatchCustomEvent("RushToField");
-	
+
+		iconTarget[TITLE_LOGO]->runAction(FadeOut::create(2.0f));
 		iconTarget[RECORD]->runAction(FadeOut::create(1.2f));
 		iconTarget[STATUS]->runAction(FadeOut::create(1.2f));
 		iconTarget[SETTING]->runAction(FadeOut::create(1.2f));
-		iconTarget[START]->runAction(Sequence::create(FadeOut::create(1.2f),
+		iconTarget[START]->runAction(Sequence::create(FadeOut::create(2.0f),
 			CallFunc::create([&]() { this->removeFromParent(); }), nullptr));
 	}
 	else if (iconTarget[RECORD]->getBoundingBox().containsPoint(touchPos)
@@ -119,11 +123,12 @@ void MainLobby::onTouchEnded_Main(Touch* touch, Event *unused_event)
 	{
 		listenerMain->setEnabled(false);
 		getParent()->getEventDispatcher()->dispatchCustomEvent("ChangeToRecordLobby");
-	
+
+		iconTarget[TITLE_LOGO]->runAction(FadeOut::create(1.5f));
 		iconTarget[START]->runAction(FadeOut::create(1.2f));
 		iconTarget[STATUS]->runAction(FadeOut::create(1.2f));
 		iconTarget[SETTING]->runAction(FadeOut::create(1.2f));
-		iconTarget[RECORD]->runAction(Sequence::create(FadeOut::create(1.2f),
+		iconTarget[RECORD]->runAction(Sequence::create(FadeOut::create(1.5f),
 			CallFunc::create([&]() { this->removeFromParent(); }), nullptr));
 	}
 	else if (iconTarget[STATUS]->getBoundingBox().containsPoint(touchPos)
@@ -131,21 +136,23 @@ void MainLobby::onTouchEnded_Main(Touch* touch, Event *unused_event)
 	{
 		listenerMain->setEnabled(false);
 		getParent()->getEventDispatcher()->dispatchCustomEvent("ChangeToStatusLobby");
-		
+
+		iconTarget[TITLE_LOGO]->runAction(FadeOut::create(1.5f));
 		iconTarget[START]->runAction(FadeOut::create(1.2f));
 		iconTarget[RECORD]->runAction(FadeOut::create(1.2f));
 		iconTarget[SETTING]->runAction(FadeOut::create(1.2f));
-		iconTarget[STATUS]->runAction(Sequence::create(FadeOut::create(1.2f),
+		iconTarget[STATUS]->runAction(Sequence::create(FadeOut::create(1.5f),
 			CallFunc::create([&]() { this->removeFromParent(); }), nullptr));
 
 	}
 	else if (iconTarget[SETTING]->getBoundingBox().containsPoint(touchPos)
 		&& (touch->getID() == iconTouchID[SETTING]))
 	{
-
+		getParent()->addChild(PopUpManager::getInstance()->getSetting(), 5);
 	}
 
 }
+
 
 
 ///////////////////////////////////////////////////////////////////////////
@@ -159,6 +166,7 @@ bool StatusLobby::init()
 	}
 
 	listenerStatus = EventListenerTouchOneByOne::create();
+	listenerStatus->retain();
 	listenerStatus->setSwallowTouches(true);
 	listenerStatus->onTouchBegan = CC_CALLBACK_2(StatusLobby::onTouchBegan_Status, this);
 	listenerStatus->onTouchEnded = CC_CALLBACK_2(StatusLobby::onTouchEnded_Status, this);
@@ -166,6 +174,7 @@ bool StatusLobby::init()
 	listenerStatus->setEnabled(false);
 
 	listenerWpChange = EventListenerTouchOneByOne::create();
+	listenerWpChange->retain();
 	listenerWpChange->setSwallowTouches(true);
 	listenerWpChange->onTouchBegan = CC_CALLBACK_2(StatusLobby::onTouchBegan_WpChange, this);
 	listenerWpChange->onTouchEnded = CC_CALLBACK_2(StatusLobby::onTouchEnded_WpChange, this);
@@ -180,7 +189,12 @@ bool StatusLobby::init()
 
 	//필요한 이벤트 쓰레드 생성 및 초기화
 	eventList[InOutMotion] = new StatusLobby_InOutMotion();
-	eventList[InOutMotion]->initThread({ iconTarget[HERO] });
+	eventList[InOutMotion]->initThread({ iconTarget[HERO] , iconTarget[HERO_CIRCLE] , iconTarget[HERO_WEAPON] });
+
+	eventList[WeaponChange] = new StatusLobby_WeaponChange();
+	eventList[WeaponChange]
+		->initThread({ iconTarget[HERO] , iconTarget[HERO_CIRCLE] , iconTarget[HERO_WEAPON] });
+
 	return true;
 }
 void StatusLobby::initUI()
@@ -197,21 +211,36 @@ void StatusLobby::initUI()
 	iconTarget[BACK]->setOpacity(0);
 	this->addChild(iconTarget[BACK]);
 
-	iconTarget[SWORD] = Sprite::create("weapon/sword.png");
+	iconTarget[SWORD] = Sprite::createWithSpriteFrame(SpriteFrameCache::getInstance()->getSpriteFrameByName("c1.png"));
 	iconTarget[SWORD]->setScale(DivForHorizontal(iconTarget[SWORD])*0.18f);
 	iconTarget[SWORD]->setAnchorPoint(Point(0.5, 0));
 	iconTarget[SWORD]->setPosition(Point(winSize().width*0.32f, winSize().height*0.22f));
 	iconTarget[SWORD]->setOpacity(0);
 	this->addChild(iconTarget[SWORD]);
 
-	iconTarget[BAT] = Sprite::create("weapon/bat.png");
+	iconTarget[BAT] = Sprite::createWithSpriteFrame(SpriteFrameCache::getInstance()->getSpriteFrameByName("c2.png"));
 	iconTarget[BAT]->setScale(DivForHorizontal(iconTarget[BAT])*0.2f, DivForVertical(iconTarget[BAT])*0.26f);
 	iconTarget[BAT]->setAnchorPoint(Point(0.5, 0));
 	iconTarget[BAT]->setPosition(Point(winSize().width*0.68f, winSize().height*0.22f));
 	iconTarget[BAT]->setOpacity(0);
 	this->addChild(iconTarget[BAT]);
-}
 
+
+	iconTarget[HERO_CIRCLE] = Sprite::create("motions/circle.png");
+	iconTarget[HERO_CIRCLE]
+		->setPosition(iconTarget[HERO]->getContentSize().width / 2, iconTarget[HERO]->getContentSize().height*0.36);
+	iconTarget[HERO_CIRCLE]->setOpacity(0);
+	iconTarget[HERO_CIRCLE]->setRotation(41);
+	iconTarget[HERO]->addChild(iconTarget[HERO_CIRCLE]);
+
+
+	iconTarget[HERO_WEAPON] = Sprite::createWithSpriteFrame(SpriteFrameCache::getInstance()->getSpriteFrameByName("c1.png"));
+	iconTarget[HERO_WEAPON]->setOpacity(0);
+	iconTarget[HERO_WEAPON]->setRotation(4);
+	iconTarget[HERO_WEAPON]->setAnchorPoint(Point(0.5f, 0.11f));
+	iconTarget[HERO_WEAPON]->setPosition(iconTarget[HERO_CIRCLE]->getContentSize().width*0.67f, iconTarget[HERO_CIRCLE]->getContentSize().height / 2);
+	iconTarget[HERO_CIRCLE]->addChild(iconTarget[HERO_WEAPON]);
+}
 
 //씬 삽입 순간, 모션 이벤트 시작
 void StatusLobby::onEnterTransitionDidFinish()
@@ -224,6 +253,8 @@ void StatusLobby::onEnterTransitionDidFinish()
 	this->runAction(Sequence::create(DelayTime::create(1.2f),
 		CallFunc::create([&]() {listenerStatus->setEnabled(true); }), nullptr));
 }
+
+
 
 bool StatusLobby::onTouchBegan_Status(Touch* touch, Event *unused_event)
 {
@@ -265,15 +296,15 @@ void StatusLobby::onTouchEnded_Status(Touch* touch, Event *unused_event)
 		listenerStatus->setEnabled(false);
 		listenerWpChange->setEnabled(false);
 
-		getParent()->getEventDispatcher()->dispatchCustomEvent("ChangeToMainLobby");	
-		
+		getParent()->getEventDispatcher()->dispatchCustomEvent("ChangeToMainLobby");
 		eventList[InOutMotion]->playBox();
+
 		iconTarget[WEAPON_TAB]
 			->runAction(Sequence::create(
 				MoveBy::create(1.0f, Point(-winSize().width*0.7f, 0))
 				, Place::create(Point(-winSize().width * 0.8f, winSize().height * 0.8f))
 				, CallFunc::create([&]() {this->removeFromParent(); })
-				, nullptr));	
+				, nullptr));
 	}
 
 	iconTouchID[WEAPON_TAB] = -1;
@@ -284,16 +315,19 @@ bool StatusLobby::onTouchBegan_WpChange(Touch* touch, Event* unused_event)
 {
 	Point touchPos = touch->getLocation();
 
-	if (iconTarget[WEAPON_TAB]->getBoundingBox().containsPoint(touchPos)) {
+	if (iconTarget[WEAPON_TAB]->getBoundingBox().containsPoint(touchPos)) 
+	{
 		iconTouchID[WEAPON_TAB] = touch->getID();
 		return true;
 	}
-	if (iconTarget[SWORD]->getBoundingBox().containsPoint(touchPos)) {
+	if (iconTarget[SWORD]->getBoundingBox().containsPoint(touchPos))
+	{
 		iconTouchID[SWORD] = touch->getID();
 		return true;
 	}
-	if (iconTarget[BAT]->getBoundingBox().containsPoint(touchPos)) {
-		iconTouchID[BAT] = touch->getID();
+	if (iconTarget[BAT]->getBoundingBox().containsPoint(touchPos)) 
+	{
+		//iconTouchID[BAT] = touch->getID();
 		return true;
 	}
 	return false;
@@ -312,9 +346,33 @@ void StatusLobby::onTouchEnded_WpChange(Touch* touch, Event *unused_event)
 		iconTarget[BACK]->runAction(FadeIn::create(1.2f));
 
 		listenerWpChange->setEnabled(false);
+		
 		this->runAction(Sequence::create(DelayTime::create(1.2f),
-			CallFunc::create([&]() {listenerStatus->setEnabled(true); }), nullptr));
+			CallFunc::create([&]() 
+		{
+			//iconTarget[HERO_WEAPON]->setSpriteFrame(SpriteFrameCache::getInstance()->getSpriteFrameByName("Sword.png"));
+			listenerStatus->setEnabled(true);
+		}),
+			nullptr));
 	}
+
+
+	if (iconTarget[SWORD]->getBoundingBox().containsPoint(touchPos)
+		&& (touch->getID() == iconTouchID[SWORD]))
+	{
+		iconTarget[HERO_WEAPON]->setSpriteFrame(SpriteFrameCache::getInstance()->getSpriteFrameByName("c1.png"));
+		eventList[WeaponChange]->playBox();
+		return;
+	}
+
+	if (iconTarget[BAT]->getBoundingBox().containsPoint(touchPos)
+		/*&& (touch->getID() == iconTouchID[BAT])*/)
+	{
+		iconTarget[HERO_WEAPON]->setSpriteFrame(SpriteFrameCache::getInstance()->getSpriteFrameByName("c2.png"));
+		eventList[WeaponChange]->playBox();
+		return;
+	}
+
 }
 
 

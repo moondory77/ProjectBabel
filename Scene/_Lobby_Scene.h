@@ -23,6 +23,7 @@ class Lobby : public cocos2d::Scene
 	Layer* subLobby[3];
 	EventThread* eventList[1];
 	void initBG();
+	
 	Sprite* iconHero;
 
 public:
@@ -33,12 +34,6 @@ public:
 		for (int i = 0; i < 1; i++) { if (eventList[i]) eventList[i]->release(); }
 	};
 	CREATE_FUNC(Lobby);
-
-	////Setting 메뉴를 위한 터치 리스너
-	//EventListenerTouchOneByOne *listener_setting;
-	//virtual bool onTouchBegan_Setting(Touch* touch, Event *unused_event);
-	////virtual void onTouchMoved_Lobby(Touch* touch, Event *unused_event);
-	//virtual void onTouchEnded_Setting(Touch* touch, Event *unused_event);
 };
 
 #endif

@@ -2,41 +2,42 @@
 #define __SCENE_ON_READY_H__
 
 #include "cocos2d.h"
-#include "Event/EventList.h"
-#include "Scene/_Lobby_Scene.h"
+#include "Event/EventThread.h"
 
 USING_NS_CC;
+using namespace std;
 
 class OnReady : public cocos2d::Scene
 {
-public:
-	static cocos2d::Scene* createScene();
+	//사용 UI 리스트
+	enum IconName {
+		HERO, START, TRIAL, BUFF
+	};
 
-	virtual bool init();
-	
-	CREATE_FUNC(OnReady);
+	enum EventName {
+		InOutMotion,
+	};
 
-	bool is_popup_on = false;
+	Layer* subLayer;
 
-	//Box *eve_cur;
-	EventList *cur_list;
-
-	EventListenerTouchOneByOne *listener_on_ready;
-	virtual bool onTouchBegan_OnReady(Touch* touch, Event *unused_event);
-	//virtual void onTouchMoved_OnReady(Touch* touch, Event *unused_event);
-	virtual void onTouchEnded_OnReady(Touch* touch, Event *unused_event);
-
-	Layer *layer_bg;
-	Sprite *spr_bg_hill;
-	Sprite *spr_bg_back;
-	Sprite *spr_bg_on_ready;
-	Layer *layer_grid;
+	EventThread* eventList[1];
+	Sprite* iconTarget[6];
+	int iconTouchID[6];
 
 	void initBG();
+	void initUI();	//layer 위에 UI 스프라이트 맵핑
 
-	//** delta 만큼 시간 딜레이 후에, 인트로 이벤트시작하는 콜백함수
-	void initScheduleCallback(float delta);
 
+public:
+	static cocos2d::Scene* createScene();
+	virtual bool init();
+	
+
+	EventListenerTouchOneByOne *listenerOnReady;
+	virtual bool onTouchBegan_OnReady(Touch* touch, Event *unused_event);
+	virtual void onTouchEnded_OnReady(Touch* touch, Event *unused_event);
+
+	CREATE_FUNC(OnReady);
 };
 
 

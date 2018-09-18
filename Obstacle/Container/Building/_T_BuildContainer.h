@@ -35,14 +35,12 @@ protected:
 	/* 빌딩을 형성하는 블럭 배열 (row * col)
 	2차원 형태가 직관적이지만, 메모리 연속 저장을 위해 1차원 저장하여 2차원에 맵핑*/
 	BlockUnit* blkArray = NULL;
-	//vector<BlockUnit> blkArray = {};
 
 	/****** ObsUnit 구성요소를 Container로 일괄 처리하기 위한 이중버퍼 *******/
 	vector<int> bufferRemove = {};
 	vector<int> bufferCrashDefense = {};
 	vector<int> bufferCrashX = {};
 	vector<int> bufferCrashY = {};
-
 
 	//BFS에 사용되는 두개의 스택
 	vector<int>* bfsMainStack = NULL;
@@ -67,12 +65,9 @@ public:
 	{
 		delete(bfsMainStack);
 		delete(bfsSubStack);
-
 		bufferChunkPositive.clear();
-		bufferChunkNegative.clear();
-
-		if(blkArray != NULL)
-			delete[] blkArray;
+		bufferChunkNegative.clear();	
+		if(blkArray != NULL)	delete[] blkArray;
 	};
 
 
@@ -126,7 +121,6 @@ public:
 		else
 			return bufferChunkNegative;
 	}; 
-
 
 	virtual void update(float deltaTime) {};
 	virtual BuildContainer& spawnChild(BuildContainer& mate) = 0;

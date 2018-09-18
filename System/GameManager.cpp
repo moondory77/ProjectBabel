@@ -1,8 +1,41 @@
-#include <stddef.h>
-#include "System/GameManager.h"
 #include "base/CCEventDispatcher.h"
+#include "GameManager.h"
 
-USING_NS_CC;
+
+PopUpManager* PopUpManager::PopUp_instance = NULL;
+
+PopUpManager* PopUpManager::getInstance()
+{
+	if (!PopUp_instance)
+	{
+		PopUp_instance = new PopUpManager();
+	}
+	return PopUp_instance;
+}
+
+PopUpLayer* PopUpManager::getSetting()
+{
+	if (PopUps[SETTING] == NULL) {
+		PopUps[SETTING] = new PopUpSetting(winSize().width*0.6f, winSize().height*0.7f);
+	}
+
+	return PopUps[SETTING];
+}
+
+PopUpLayer* PopUpManager::getPause()
+{
+	if (PopUps[PAUSE] == NULL) {
+		PopUps[PAUSE] = new PopUpSetting(winSize().width, winSize().height);
+	}
+	return PopUps[PAUSE];
+}
+
+
+
+
+
+
+
 
 //***************************	#EventManager	**************************************// 
 EventManager* EventManager::EventManager_instance = NULL;
@@ -44,15 +77,15 @@ void EventManager::callback_sceneTransfer(Ref *sender, sceneNum scene_num)
 	case ON_GAME:
 		dst = TransitionFade::create(2, OnGame::createScene());
 		break;
-	//case RESULT:
-	//	dst = TransitionFade::create(2, Result::createScene());
-	//	break;
-	//case PLAYER_INFO:
-	//	dst = TransitionFade::create(2, PlayerInfo::createScene());
-	//	break;
-	//case RECORD:
-	//	dst = TransitionFade::create(2, Record::createScene());
-	//	break;
+		//case RESULT:
+		//	dst = TransitionFade::create(2, Result::createScene());
+		//	break;
+		//case PLAYER_INFO:
+		//	dst = TransitionFade::create(2, PlayerInfo::createScene());
+		//	break;
+		//case RECORD:
+		//	dst = TransitionFade::create(2, Record::createScene());
+		//	break;
 	}
 
 	Director::getInstance()->replaceScene(dst);

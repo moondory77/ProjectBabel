@@ -16,7 +16,8 @@ enum charStateType {
 	DEAD = 31, PRESSED = 37
 };
 
-//모션교체 State-Machine에서, animation 형태의 Action 
+
+//Animation 형태의 Motion Action 
 enum charActionType {
 	actNone,
 
@@ -37,13 +38,12 @@ enum charActionType {
 };
 
 
-
 //MotionLock에 대한, 각 Atomic Action의 bit 위치
 enum charMotionElement
 {
-	ANIMATION = 1,
-	CIRCLE = 2,
-	WEAPON = 4,
+	ANIMATION = 0x01,
+	CIRCLE = 0x02,
+	WEAPON = 0x04,
 };
 
 
@@ -85,6 +85,7 @@ private:
 	bool isMotionPlaying = false;
 	bool isSpcIntroPlaying = false;	//스페셜 어택 모션 플레이 중 플래그
 
+
 	//Controller에서 들어오는 Input
 	map<charStateType, unsigned char> inputState = {
 		{ NONE , 0 },
@@ -95,6 +96,7 @@ private:
 		{ DEAD , 0 }
 	};
 
+	//Circle Rot + Weapon Rot
 	map<charActionType, pair<float, float>> finishRotation = {
 		{ actNone			, { 41.0f, 4.0f}},
 		{ actJumpReady		, { 38.0f, 18.0f }},
@@ -149,9 +151,7 @@ public:
 	Character(Point initPos, float gravity, float jumpVelocity, int specialDamage);
 	~Character();
 
-
 	Action* shakeCanvas;
-
 	void addState(charStateType aState);
 	void delState(charStateType dState);
 
@@ -182,19 +182,32 @@ public:
 	Layer* attackRadar;
 	Layer* specialRadar;
 	Layer* shieldRadar;
-
-
 	//int getAttackDamage(Block* blk);
+	
+
 	//대상을 attack radar 체크해서 유효데미지 반환
 	int chkAttckRadar(const Sprite& attackable_unit);
 	int chkDefenseRadar(const Sprite& defensable_unit);
 
-
+	//pair<float, float> atkScopeRadius;
+	//pair<float, float> atkScopeAngle = { -45.0f, 178.0f };
+	
 	//현재 장착 weapon에 대해, 유효 타격 min~max 범위
-	pair<float, float> atkScopeRadius;
-	pair<float, float> atkScopeAngle = { -45.0f, 178.0f };
+	struct atkScopeRadius{
+		float min;
+		float max;
+	}atkScopeRadius;
+
+	struct atkScopeAngle{
+		float min = -45.0f;
+		float max = 178.0f;
+	}atkScopeAngle;
+	
 	float lapsedAtkTick;			//공격 애니메이션이 진행되는 시간 지표 (0 ~ 1 까지 변화)
 	int lapsedAtkScore;
+
+
+
 
 	int getState() { return state; };
 	void getMotionLock(charActionType input_action);
@@ -243,7 +256,6 @@ public:
 
 
 
-
 	float getLimitHeight() { return limitHeight; }
 	float getJumpVelo() { return jumpVelo; }
 	float getVeloY() { return curVeloY; }
@@ -258,7 +270,6 @@ public:
 		outerVelocity = -1.0f;*/
 	};
 	Point getCharPosition() { return sprChar->getPosition(); }
-
 
 
 	Size getBodySize() { return colliderChar->getBoundingBox().size; }
@@ -339,32 +350,34 @@ public:
 	//bool isDead() ;
 	//bool isMove() ;
 
-	void callback_tick_AtkScope(float deltaTime);
+
+	void callback_tick_AtkScope(float deltaTime);	//Hit액션 중, delta-time에 따른 공격범위 변화 스케쥴
 	void callback_tick_AtkCharge(float deltaTime);
 	void callback_tick_AtkRelease(float deltaTime);
 	//void callback_tick_AtkConsume(float deltaTime);
 
 	void callback_FinishSpcIntro(Ref* sender);
 	void callback_DelSpc(Ref* sender);
-	void callback_DelCrash(Ref* sender);
-	void callback_DelPress(Ref* sender);
+	//void callback_DelCrash(Ref* sender);
+	//void callback_DelPress(Ref* sender);
 
 
 	//State Bit 전체 초기화
-	inline void initStateBit(charStateType state) { this->inputState[state] = 0; };
+	inline void initStateBit(charStateType state){ 
+		this->inputState[state] = 0x00; 
+	};
 	//State Bit(0 ~ 7 bit) n번째 비트를 set on 
 	inline void setOnStateBit(charStateType state, unsigned char target_bit) {
-		inputState[state] |= (unsigned char)pow(2, target_bit);
+		inputState[state] |= (0x01 << target_bit);
 	};
 	//State Bit(0 ~ 7 bit) n번째 비트를 set off
 	inline void setOffStateBit(charStateType state, unsigned char target_bit) {
-		inputState[state] &= ~(unsigned char)pow(2, target_bit);
+		inputState[state] &= ~(0x01 << target_bit);
 	}
 	//State Bit(0 ~ 7 bit) n번째 비트 on/off 여부 반환 
 	inline bool getOnStateBit(charStateType state, unsigned char target_bit) {
-		return inputState[state] & (unsigned char)pow(2, target_bit);
+		return inputState[state] & (0x01 << target_bit);
 	}
-
 
 	//input bit(4 bit)에 대한 on/off 
 	inline void setOnStateInput(charStateType state, unsigned char target_bit) {
@@ -389,31 +402,27 @@ public:
 	}
 
 	//input - trigger 비교 반환
-	inline bool getEqualInputTrigger(charStateType state) {
+	inline bool getEqualInputTrigger(charStateType state) {	
 
 		unsigned char state_bit = inputState[state];
 		unsigned char input = state_bit << 4;
-		unsigned char trigger = state_bit &= ~15;		//input bit 부분은 전체 마스킹
-
+		unsigned char trigger = state_bit &= ~0x0f;		//input bit 부분은 전체 마스킹
+		
 		return (input == trigger);						//input 비트와 trigger 비트 동일 여부
 	};
+
 	//input - trigger dirty 여부 반환
-	inline bool getDirtyInputTrigger(charStateType state, bool input_or_trigger) {
-
+	inline bool getDirtyInputTrigger(charStateType state, bool input_or_trigger) {		
 		unsigned char state_bit = inputState[state];
-
 		if (input_or_trigger) {
 			unsigned char input = state_bit << 4;
-			return input != 0;
+			return input != 0x00;
 		}
-		else {
-			//input_bit 부분 마스킹(off 처리)
-			unsigned char trigger = state_bit &= ~15;
-			return trigger != 0;
+		else {		
+			unsigned char trigger = state_bit &= ~0x0f;	//input_bit 부분 마스킹(off 처리)
+			return trigger != 0x00;
 		}
 	};
-
-
 
 };
 

@@ -1,17 +1,19 @@
 #ifndef __GameManager__H__
 #define __GameManager__H__
-#define PI 3.14159265358979323846
 
 #include "cocos2d.h"
 #include "Scene/_Lobby_Scene.h"
 #include "Scene/_OnReady_Scene.h"
 #include "Scene/_Result_Scene.h"
-#include "Scene/_PlayerInfo_Scene.h"
-#include "Scene/_Record_Scene.h"
+//#include "Scene/_PlayerInfo_Scene.h"
+//#include "Scene/_Record_Scene.h"
 #include "OnGame/_OnGame_Scene.h"
+#include "System/PopUps.h"
 
+#define PI 3.14159265358979323846
 
 USING_NS_CC;
+using namespace std;
 
 enum sceneNum {
 	LOBBY = 0,
@@ -22,10 +24,10 @@ enum sceneNum {
 	//RECORD = 5,
 };
 
+
 static inline Size winSize() {
 	return Director::getInstance()->getWinSize();
 };
-
 static inline float winAspectRatio() {
 	return winSize().height / winSize().width;
 };
@@ -42,6 +44,29 @@ static inline float DivForHorizontal(Sprite* target){
 static inline float getTowardAngle(Vec2 toward_vec) {
 	return CC_RADIANS_TO_DEGREES(ccpToAngle(toward_vec));
 }
+
+
+
+class PopUpManager : public CCNode
+{
+	enum PopUpType {
+		SETTING, PAUSE
+	};
+
+	static PopUpManager* PopUp_instance;
+
+	PopUpLayer* PopUps[2];
+
+	bool isMusicOn = false;
+	bool isSoundOn = false;
+	bool isVibrateOn = false;
+
+public:
+	static PopUpManager* getInstance();
+	PopUpLayer* getSetting();
+	PopUpLayer* getPause();
+};
+
 
 
 
@@ -89,6 +114,9 @@ public:
 	/// delay 시간동안 해당 리스너 중지시키는 액션 반환. eventOnToggle 콜백 이용
 
 };
+
+
+
 
 //** 개발용 그리드 레이어
 class GridLayer :public Layer

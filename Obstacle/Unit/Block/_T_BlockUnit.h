@@ -44,11 +44,7 @@ public:
 	BlockUnit();	
 	BlockUnit(const BlockUnit& blk) {};
 	
-	virtual ~BlockUnit() {
-		//CCLOG("Block unit : I'm dying!!");
-	};
-
-
+	virtual ~BlockUnit() {};
 	bool isVisitable();
 	bool isSearchable(int chunk_id, const Point& pos);
 

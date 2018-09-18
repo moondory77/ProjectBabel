@@ -20,7 +20,6 @@ protected:
 
 public:
 
-
 	bool isAlive() { return this->isAliveFlag; };
 	Point getPosition() { return Point(sprUnit->getBoundingBox().getMidX(), sprUnit->getBoundingBox().getMidY()); }
 	float getPositionX() { return sprUnit->getBoundingBox().getMidX(); }

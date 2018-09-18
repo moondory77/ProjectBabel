@@ -24,9 +24,8 @@ public:
 
 	void updateVelocity(float deltaTime);
 	virtual void update(float deltaTime) override;
+	
 	virtual BuildContainer& spawnChild(BuildContainer& mate) override;
-
-
 };
 
 

@@ -3,6 +3,7 @@
 #include "VFX/EffectManager.h"
 
 
+/// 생성 0차 
 BuildContainer::BuildContainer(const ObsBatchUnit& batch_unit, Character& main_char, ParticlePool& ruins_pool)
 	: ObsContainer(batch_unit, main_char, ruins_pool)
 {
@@ -27,7 +28,7 @@ void BuildContainer::onEnterTransitionDidFinish()
 
 
 
-
+/// 생성 1차 
 void BuildContainer::setMold(float scale_factor, int row_num, int col_num)
 {
 	scaleFactor = scale_factor;
@@ -43,7 +44,7 @@ void BuildContainer::setMold(float scale_factor, int row_num, int col_num)
 	unitLength = scaleFactor * winSize().width / numCol;
 }
 
-
+/// 생성 2차 
 void BuildContainer::setSpec(float delta_g, float max_dt, float min_dt, int unit_stren)
 {
 	curGravity = delta_g;
@@ -53,7 +54,7 @@ void BuildContainer::setSpec(float delta_g, float max_dt, float min_dt, int unit
 };
 
 
-
+/// 생성 3차 
 void BuildContainer::initBlkFrames()
 {
 	blkArray = new BlockUnit[numRow * numCol];
@@ -80,7 +81,7 @@ void BuildContainer::initBlkFrames()
 	bfsSubStack = new vector<int>();
 }
 
-
+/// 생성 4차 완료
 void BuildContainer::buildBlocks(Point& init_pos)
 {
 	for (int i = 0; i < numRow * numCol; i++)
@@ -132,6 +133,8 @@ void BuildContainer::buildBlocks(Point& init_pos)
 
 
 
+
+
 void BuildContainer::dumpRemoveBuffer()
 {
 	for (auto iter = bufferRemove.begin(); iter != bufferRemove.end(); iter++)
@@ -141,11 +144,6 @@ void BuildContainer::dumpRemoveBuffer()
 	}
 	bufferRemove.clear();
 }
-
-
-
-
-
 void BuildContainer::dumpCrashBuffer()
 {
 	mainChar.setColliderPosition(mainChar.getColliderPosition() + getCrashBounceVec());
@@ -153,7 +151,6 @@ void BuildContainer::dumpCrashBuffer()
 	if (!bufferCrashX.empty()) bufferCrashX.clear();
 	if (!bufferCrashY.empty()) bufferCrashY.clear();
 }
-
 
 
 Vec2 BuildContainer::getCrashBounceVec()
@@ -178,9 +175,6 @@ Vec2 BuildContainer::getCrashBounceVec()
 	CCLOG("Bounce Vector (%.2f, %.2f)", bounce_x, bounce_y);
 	return Vec2(bounce_x, bounce_y);
 }
-
-
-
 int BuildContainer::getNewChunkID()
 {
 	//chunk ID를 새로 부여함과 동시에, Block 포인터를 저장할 버퍼 생성
@@ -199,7 +193,6 @@ int BuildContainer::getNewChunkID()
 }
 
 
-
 void BuildContainer::resetChunkingPhase()
 {
 	curChunkID = 0;
@@ -215,9 +208,6 @@ void BuildContainer::resetChunkingPhase()
 	return;
 }
 
-
-
-
 void BuildContainer::BFS(int chunk_id, int caller_idx)
 {
 	if (!bfsMainStack->empty())
@@ -230,9 +220,6 @@ void BuildContainer::BFS(int chunk_id, int caller_idx)
 	}
 	return;
 }
-
-
-
 vector<int>& BuildContainer::breadthSearch(int chunk_id, vector<int>& main_stack)
 {
 	while (!main_stack.empty())
@@ -274,12 +261,9 @@ vector<int>& BuildContainer::breadthSearch(int chunk_id, vector<int>& main_stack
 
 
 
-
-
 void BuildContainer::chunkBlocks()
 {
 	chunkingFinishFlag = false;
-	//auto iter = blkArray.begin();
 
 	int i = 0;
 	//Alive 상태의 모든 Block을 순회 update
@@ -300,9 +284,6 @@ void BuildContainer::chunkBlocks()
 	//CCLOG("=======================================================================");
 
 }
-
-
-
 void BuildContainer::getRigidTime(float frame_damage)
 {
 	float rigid_time = frame_damage*0.001f;
@@ -324,8 +305,6 @@ void BuildContainer::getRigidTime(float frame_damage)
 		//this->runAction(rigid_in_attack);
 	}
 }
-
-
 
 
 //void Building::DFS(int chunk_id, int linked_idx)

@@ -139,11 +139,8 @@ public:
 	float NowDefenseGauge;
 	void DefenseCheck(float dt);
 
-
-
 	float NowBuildPosY;
 	Sprite *back_icon_OnGame, *jump_icon, *def_icon, *popup_setting_icon;
-
 
 	Sprite *cameraTarget;
 	CustomFollow *followCenter;

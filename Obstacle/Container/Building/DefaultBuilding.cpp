@@ -19,6 +19,7 @@ DefaultBuilding::DefaultBuilding(const BuildContainer& bld)
 void DefaultBuilding::update(float deltaTime)
 {
 	frameDamage = 0;
+	
 	//청크 재분류 필요시, 실행
 	if (!chunkingFinishFlag)
 		chunkBlocks();
@@ -28,11 +29,8 @@ void DefaultBuilding::update(float deltaTime)
 	//빌딩의 velocity를 업데이트
 	updateVelocity(deltaTime);
 
-
 	for (int i = 0; i < numRow*numCol; i++)
 	{
-		//loop 중, Chunk 갱신 될때까지만 DFS 수행 -> Chunk 구별 완료
-		//chunk에 의한 update 반영은 이전 frame에 update된 chunk 정보로 (positive-negative 교차 반영)
 		if (blkArray[i].isAlive())
 		{
 			blkArray[i].positionUpdate(deltaTime);
@@ -40,7 +38,7 @@ void DefaultBuilding::update(float deltaTime)
 		}
 	}
 
-	//bouce을 계산하여, collider를 적절한 위치로 재배치
+	//각 bouce을 계산하여, Collider Position Optimizing
 	if (!bufferCrashX.empty() || !bufferCrashY.empty()) {
 		dumpCrashBuffer();
 	}
@@ -57,13 +55,11 @@ void DefaultBuilding::update(float deltaTime)
 	//	bufferCrashDefense.clear();
 	//}
 
-
 	if (!bufferRemove.empty()) {
 		dumpRemoveBuffer();
-		//positive-negative Chunk Phase 갱신
+		//새로운 Chunk 분류 -> positive-negative Phase 갱신
 		resetChunkingPhase();
 	}
-
 
 	if (brokenCnt >= numRow * numCol)
 	{
@@ -98,6 +94,7 @@ void DefaultBuilding::update(float deltaTime)
 		}
 	}
 
+
 	mainChar.lapsedAtkScore += frameDamage;
 
 };
@@ -128,12 +125,3 @@ BuildContainer& DefaultBuilding::spawnChild(BuildContainer& mate)
 	clone->setSpec(curGravity, maxVeloY, minVeloY, unitStrength);
 	return *clone;
 };
-
-
-//BuildContainer& DefaultBuilding::spawnSimilar(int spectrum_factor)
-//{
-//	auto clone = new DefaultBuilding(texBatcher, mainChar, ruinsPool);
-//	clone->setFeature(pair<int, int>{numRow, numCol}, initPos, scaleFactor, maxDeltaVelocity, minDeltaVelocity, gravity, unitStrength);
-//	
-//	return clone;
-//}

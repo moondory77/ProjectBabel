@@ -7,18 +7,13 @@
 USING_NS_CC;
 using namespace std;
 
-
 //어떤 스케쥴러(이벤트 큐)에 의해 제어될 지 
-enum ObsMainType
-{
-	BUILDING = 0,
-	ORDEAL = 1,
-	BOSS = 2
+enum ObsMainType{
+	BUILDING = 0, ORDEAL = 1, BOSS = 2
 };
 
 //어떤 텍스쳐를 매핑할 지..
-enum ObsTexType
-{
+enum ObsTexType{
 	COMPANY = 0,
 	APARTMENT = 1,
 	GOTHIC = 2,
@@ -27,6 +22,7 @@ enum ObsTexType
 	METEOR = 30,
 	MUSE = 50,
 };
+
 
 
 
@@ -60,7 +56,6 @@ public:
 		texPool = new TextureBatcher();
 		isExist = true;
 	}
-
 
 	~ObsBatchManager() {	
 		

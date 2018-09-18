@@ -1,20 +1,13 @@
+#include "_Result_Scene.h"
 #include "System/GameManager.h"
 #include "System/BGManager.h"
-#include "Scene/_Result_Scene.h"
-#include "Scene/_Lobby_Scene.h"
-#include "Event/EventPlayer.h"
-#include "Event/EventBox.h"
-//#include "LabelTypingEffect.h"
-#include "base/CCEventDispatcher.h"
-#include <string.h>
+#include "Event/Events.h"
 
-USING_NS_CC;
 
 Scene* Result::createScene()
 {
 	return Result::create();
 }
-
 
 bool Result::init()
 {
@@ -22,101 +15,106 @@ bool Result::init()
 	{
 		return false;
 	}
+	eventList[InOutMotion] = new Result_InOutMotion();
 
 	_eventDispatcher->removeAllEventListeners();
+	initBG();
+	initUI();
+
+	eventList[InOutMotion]->initThread({ iconTarget[HERO] });
+	eventList[InOutMotion]->playBox();
+	iconTarget[RESULT_LOGO]->runAction(FadeIn::create(2.0f));
+	iconTarget[NEXT]->runAction(FadeIn::create(2.0f));
 
 	//** Result 씬에 대한 리스너 생성 및 등록
-	listener_result = EventListenerTouchOneByOne::create();
-	listener_result->setSwallowTouches(true);
-	listener_result->onTouchBegan = CC_CALLBACK_2(Result::onTouchBegan_Result, this);
-	listener_result->onTouchEnded = CC_CALLBACK_2(Result::onTouchEnded_Result, this);
-	Director::getInstance()->getEventDispatcher()->addEventListenerWithFixedPriority(listener_result, 1);
-	///임시로 우선순위 1
+	listenerResult = EventListenerTouchOneByOne::create();
+	listenerResult->setSwallowTouches(true);
+	listenerResult->onTouchBegan = CC_CALLBACK_2(Result::onTouchBegan_Result, this);
+	listenerResult->onTouchEnded = CC_CALLBACK_2(Result::onTouchEnded_Result, this);
+	_eventDispatcher->addEventListenerWithFixedPriority(listenerResult, 1);
+	listenerResult->setEnabled(false);
 
-	// 진도암시 배경. hill 배경 셋팅
-	BGManager::getInstance()->loadBG();
-	this->addChild(BGManager::getInstance()->getParallax());
-	initBG();
-
-	// EventPlayer 초기화시키고, 씬에 레이어로 삽입
-	MenuResult::getInstance()->initMenuResult();
-	cur_list = MenuResult::getInstance()->getList();
-	this->addChild(MenuResult::getInstance()->getLayer(), 5);
-
-	//3.2초 동안 리스너를 잠궈둠 
-	this->runAction(EventManager::getInstance()->getListenerSleep(3.2f, listener_result));
-	//0.8초 후 인트로 이벤트 시작(싱크 맞추기 위해)
-	this->scheduleOnce(schedule_selector(Result::initScheduleCallback), 0.8f);
+	this->runAction(Sequence::create(
+		DelayTime::create(2.1f), 
+		CallFunc::create([&]() {listenerResult->setEnabled(true); }), 
+		nullptr));
 
 	return true;
 }
 
-void Result::initScheduleCallback(float delta)
-{
-	cur_list->moveCurNext();	//Menu_Result_Intro_0
-	cur_list->scanCur()->setEvent();
-	cur_list->scanCur()->startEvent();
-}
+
 
 void Result::initBG()
 {
-	//** #1 언덕 배경레이어
-	layer_bg_hill = LayerColor::create(Color4B::WHITE);
-	layer_bg_hill->setAnchorPoint(Point::ZERO);
-	layer_bg_hill->setPosition(Point::ZERO);
-	layer_bg_hill->setOpacity(0);
-	this->addChild(layer_bg_hill);
+	// 진도암시 배경. hill 배경 셋팅
+	BGManager::getInstance()->loadBG();
+	this->addChild(BGManager::getInstance()->getParallax());
 
-	//** #2 메인 배경위의 약간 불투명한 레이어
-	spr_bg_back = Sprite::create("layout/result/bg_black.png");
-	spr_bg_back->setScale(DivForHorizontal(spr_bg_back), DivForVertical(spr_bg_back));
-	//spr_bg_back->setAnchorPoint(Point::ZERO);
-	spr_bg_back->setPosition(Point(winSize().width*0.5f, winSize().height*0.5f));
-	spr_bg_back->setOpacity(100);
-	layer_bg_hill->addChild(spr_bg_back);
+	auto spr_black_back = Sprite::create("layout/on_ready/bg_black.png");
+	spr_black_back->setScale(DivForHorizontal(spr_black_back), DivForVertical(spr_black_back));
+	spr_black_back->setAnchorPoint(Point::ZERO);
+	spr_black_back->setPosition(Point::ZERO);
+	spr_black_back->setOpacity(100);
+	this->addChild(spr_black_back);
 
-	//** #3 언덕 스프라이트
-	spr_bg_hill = Sprite::create("layout/result/hill.png");
-	spr_bg_hill->setScale(DivForHorizontal(spr_bg_hill)*1.2f, DivForVertical(spr_bg_hill)*0.45f);
-	spr_bg_hill->setAnchorPoint(Point::ZERO);
+	auto spr_hill = Sprite::create("layout/result/hill.png");
+	spr_hill->setScale(DivForHorizontal(spr_hill)*1.2f, DivForVertical(spr_hill)*0.45f);
+	spr_hill->setAnchorPoint(Point::ZERO);
 	//spr_bg_hill->setRotation(2);
-	spr_bg_hill->setPosition(Point(-winSize().width*0.2f, 0));
-	layer_bg_hill->addChild(spr_bg_hill);
+	spr_hill->setPosition(Point(-winSize().width*0.2f, 0));
+	this->addChild(spr_hill);
+
+	iconTarget[HERO] = Sprite::createWithSpriteFrame(SpriteFrameCache::getInstance()->getSpriteFrameByName("walk_left_5.png"));
+	iconTarget[HERO]->setScale(DivForHorizontal(iconTarget[HERO])*0.2f);
+	iconTarget[HERO]->setAnchorPoint(Point(0.5, 0));
+	iconTarget[HERO]->setPosition(winSize().width*1.1f, winSize().height*0.04f);
+	this->addChild(iconTarget[HERO]);
+}
+
+
+void Result::initUI()
+{
+	subLayer = Layer::create();
+	subLayer->setAnchorPoint(Point::ZERO);
+	this->addChild(subLayer);
+
+	iconTarget[RESULT_LOGO] = Sprite::create("layout/result/result_logo.png");
+	iconTarget[RESULT_LOGO]->setScale(DivForHorizontal(iconTarget[RESULT_LOGO])*0.6f, DivForVertical(iconTarget[RESULT_LOGO])*0.13f);
+	iconTarget[RESULT_LOGO]->setPosition(winSize().width*0.5f, winSize().height*0.8f);
+	iconTarget[RESULT_LOGO]->setOpacity(0);
+	subLayer->addChild(iconTarget[RESULT_LOGO]);
+
+	iconTarget[NEXT] = Sprite::create("layout/result/confirm.png");
+	iconTarget[NEXT]->setScale(DivForHorizontal(iconTarget[NEXT])*0.3f);
+	iconTarget[NEXT]->setAnchorPoint(Point(0.5, 0));
+	iconTarget[NEXT]->setPosition(Point(winSize().width*0.5f, winSize().height*0.3f));
+	iconTarget[NEXT]->setOpacity(0);
+	subLayer->addChild(iconTarget[NEXT]);
 }
 
 
 bool Result::onTouchBegan_Result(Touch* touch, Event *unused_event)
 {
-	return true;
+	Point touchPos = touch->getLocation();
+
+	//터치 시, 터치된 아이콘의 id 획득 후 이벤트 넘긴다
+	if (iconTarget[NEXT]->getBoundingBox().containsPoint(touchPos)) {
+		iconTouchID[NEXT] = touch->getID();
+		return true;
+	}
+	return false;
 }
+
+
 void Result::onTouchEnded_Result(Touch* touch, Event *unused_event)
 {
-	Point touchPoint = touch->getLocation();
+	Point touchPos = touch->getLocation();
 
-	//결과 등급 뜨기 전이면,
-	if (!is_confirm_on)
+	if (iconTarget[NEXT]->getBoundingBox().containsPoint(touchPos)
+		&& (touch->getID() == iconTouchID[NEXT]))
 	{
-		cur_list->moveCurTo(2);	//Menu_Result_Grading_0
-		cur_list->scanCur()->setEvent();
-		cur_list->scanCur()->startEvent();
-		
-		//이벤트 동안, 리스너 3초 잠금
-		this->runAction(EventManager::getInstance()->getListenerSleep(3.0f, listener_result));
-		is_confirm_on = true;
+		this->eventList[InOutMotion]->playBox();
+		listenerResult->setEnabled(false);
+		iconTarget[NEXT]->runAction(Sequence::create(FadeOut::create(2.0f), nullptr));
 	}
-	//결과 등급 뜬 후면,
-	else
-	{
-		if (MenuResult::getInstance()->getConfirmTarget()->getBoundingBox().containsPoint(touchPoint))
-		{
-			cur_list->moveCurTo(3);	//Menu_Result_Outro_0
-			cur_list->scanCur()->setEvent();
-			cur_list->scanCur()->startEvent();
-
-			_eventDispatcher->removeAllEventListeners();
-			EventManager::getInstance()->setFromResult(true);
-			this->runAction(EventManager::getInstance()->sceneTransferAction(4.8f, LOBBY));
-		}
-	}
-
 }

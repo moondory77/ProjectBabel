@@ -6,7 +6,7 @@
 #include "base/CCEventDispatcher.h"
 #include "System/GameManager.h"
 #include "System/BGManager.h"
-#include "System/PopUps.h"
+//#include "System/PopUps.h"
 #include "VFX/EffectManager.h"
 
 #include "OnGame/Character.h"
@@ -53,11 +53,6 @@ void OnGame::initJoyController()
 	joyController->setLimitScreen(true);
 	fixedLayer->addChild(joyController);	
 
-	listener_OnGame = EventListenerTouchOneByOne::create();
-	listener_OnGame->onTouchBegan = CC_CALLBACK_2(OnGame::onTouchBegan_OnGame, this);
-	listener_OnGame->onTouchEnded = CC_CALLBACK_2(OnGame::onTouchEnded_OnGame, this);
-	Director::getInstance()->getEventDispatcher()->addEventListenerWithFixedPriority(listener_OnGame, 1);
-	this->setKeypadEnabled(true); //device의 home, back button enable 해줌.
 }
 void OnGame::initCharacter() {
 	//initPos,  gravity,  jumpVelocity,  specialDamage
@@ -65,8 +60,6 @@ void OnGame::initCharacter() {
 	movingLayer->addChild(mainChar, 3);
 	mainChar->setUICanvas(fixedLayer);
 }
-
-
 
 
 void OnGame::initBG() {
@@ -100,8 +93,6 @@ void OnGame::initBG() {
 
 
 
-
-
 void OnGame::initIcon() {
 
 	//설정 버튼(이것은 팝업 창을 띄우고 위치는 오른쪽 위로 잡음)
@@ -111,6 +102,9 @@ void OnGame::initIcon() {
 	popup_setting_icon->setPosition(Point(winSize().width - 20, winSize().height - 20));
 	fixedLayer->addChild(popup_setting_icon, 10, "setting");
 }
+
+
+
 void OnGame::initGauge() {
 	DefenseTime = 16.f;
 	NowDefenseGauge = 0.0;
@@ -213,6 +207,14 @@ bool OnGame::init()
 	building_num = 0;
 	this->addChild(movingLayer);
 	this->addChild(fixedLayer);
+
+
+	listener_OnGame = EventListenerTouchOneByOne::create();
+	listener_OnGame->onTouchBegan = CC_CALLBACK_2(OnGame::onTouchBegan_OnGame, this);
+	listener_OnGame->onTouchEnded = CC_CALLBACK_2(OnGame::onTouchEnded_OnGame, this);
+	Director::getInstance()->getEventDispatcher()->addEventListenerWithFixedPriority(listener_OnGame, 1);
+	this->setKeypadEnabled(true); //device의 home, back button enable 해줌.
+
 
 
 	obsBatchMgr = new ObsBatchManager();
@@ -393,8 +395,6 @@ bool OnGame::onTouchBegan_OnGame(Touch* touches, Event *unused_event) {
 	//if (joystick->getBoundingBox().containsPoint(touchPoint))
 	//	return false;
 
-
-
 	if (popup_setting_icon->getBoundingBox().containsPoint(touchPoint))
 		return true;
 
@@ -461,8 +461,6 @@ bool OnGame::onTouchBegan_OnGame(Touch* touches, Event *unused_event) {
 	//	}
 	//}
 
-
-
 	return true;
 }
 
@@ -504,10 +502,10 @@ void OnGame::onTouchEnded_OnGame(Touch* touches, Event *unuesd_event) {
 		listener_pause->onTouchBegan = CC_CALLBACK_2(OnGame::onTouchBegan_Pause, this);
 		listener_pause->onTouchEnded = CC_CALLBACK_2(OnGame::onTouchEnded_Pause, this);
 
-		Director::getInstance()->getEventDispatcher()
-			->addEventListenerWithFixedPriority(listener_pause, 2);
-		PopUpPause::getInstance()->loadPopUp();
-		this->addChild(PopUpPause::getInstance()->getLayer(), 3);
+		//this->addChild(PopUpManager::getInstance()->getSetting(), 3);
+		//Director::getInstance()->getEventDispatcher()->addEventListenerWithFixedPriority(listener_pause, 2);
+		//PopUpPause::getInstance()->loadPopUp();
+		//this->addChild(PopUpPause::getInstance()->getLayer(), 3);
 	}
 	else
 	{
@@ -586,48 +584,50 @@ void OnGame::onTouchEnded_Pause(Touch* touch, Event *unused_event)
 	Point touchPoint = touch->getLocation();
 
 
-	if (PopUpPause::getInstance()->spr_icon_resume->getBoundingBox().containsPoint(touchPoint))
-	{
-		Director::sharedDirector()->resume();
-		//this->schedule(schedule_selector(OnGame::MainScheduler));
+	//if (PopUpPause::getInstance()->spr_icon_resume->getBoundingBox().containsPoint(touchPoint))
+	//{
+	//	Director::sharedDirector()->resume();
+	//	//this->schedule(schedule_selector(OnGame::MainScheduler));
 
-		_eventDispatcher->removeEventListener(listener_pause);
-		this->removeChild(PopUpPause::getInstance()->getLayer());
-	}
-	else if (PopUpPause::getInstance()->spr_icon_quit->getBoundingBox().containsPoint(touchPoint))
-	{
+	//	_eventDispatcher->removeEventListener(listener_pause);
+	//	//this->removeChild(PopUpPause::getInstance()->getLayer());
+	//}
+	//else if (PopUpPause::getInstance()->spr_icon_quit->getBoundingBox().containsPoint(touchPoint))
+	//{
 
-		//HelloWorld::OnGame_touch_on = false;
-		//HelloWorld::Lobby_touch_on = true;
-		Director::sharedDirector()->resume();
-		is_popup_on = false;
-		//auto pScene = Lobby::createScene();
-		//Director::getInstance()->replaceScene(pScene);
-		//log("touch5 OnGame");
-		//return true;
-		_eventDispatcher->removeAllEventListeners();
-		this->runAction(EventManager::getInstance()->sceneTransferAction(0.1f, LOBBY));
-		//Director::getInstance()->replaceScene(Lobby::createScene());
-	}
-	else if (PopUpPause::getInstance()->spr_icon_setting->getBoundingBox().containsPoint(touchPoint))
-	{
-		//** 셋팅 팝업 레이어에 대한 리스너를 생성하고 콜백설정까지
-		listener_setting = EventListenerTouchOneByOne::create();
-		listener_setting->setSwallowTouches(true);
-		listener_setting->onTouchBegan = CC_CALLBACK_2(OnGame::onTouchBegan_Setting, this);
-		listener_setting->onTouchEnded = CC_CALLBACK_2(OnGame::onTouchEnded_Setting, this);
-		listener_setting->setSwallowTouches(true);
+	//	//HelloWorld::OnGame_touch_on = false;
+	//	//HelloWorld::Lobby_touch_on = true;
+	//	Director::sharedDirector()->resume();
+	//	is_popup_on = false;
+	//	//auto pScene = Lobby::createScene();
+	//	//Director::getInstance()->replaceScene(pScene);
+	//	//log("touch5 OnGame");
+	//	//return true;
+	//	_eventDispatcher->removeAllEventListeners();
+	//	this->runAction(EventManager::getInstance()->sceneTransferAction(0.1f, LOBBY));
+	//	//Director::getInstance()->replaceScene(Lobby::createScene());
+	//}
+	//else if (PopUpPause::getInstance()->spr_icon_setting->getBoundingBox().containsPoint(touchPoint))
+	//{
+	//	//** 셋팅 팝업 레이어에 대한 리스너를 생성하고 콜백설정까지
+	//	listener_setting = EventListenerTouchOneByOne::create();
+	//	listener_setting->setSwallowTouches(true);
+	//	listener_setting->onTouchBegan = CC_CALLBACK_2(OnGame::onTouchBegan_Setting, this);
+	//	listener_setting->onTouchEnded = CC_CALLBACK_2(OnGame::onTouchEnded_Setting, this);
+	//	listener_setting->setSwallowTouches(true);
 
 
-		Director::getInstance()->getEventDispatcher()
-			->addEventListenerWithFixedPriority(listener_setting, 1);
+	//	Director::getInstance()->getEventDispatcher()
+	//		->addEventListenerWithFixedPriority(listener_setting, 1);
 
-		PopUpSetting::getInstance()->loadPopUp();
-		this->addChild(PopUpSetting::getInstance()->getLayer(), 5);
-	}
-	else
-	{
-	}
+	//	//PopUpSetting::getInstance()->loadPopUp();
+	//	//this->addChild(PopUpSetting::getInstance()->getLayer(), 5);
+	//}
+	//else
+	//{
+	//}
+
+
 }
 
 bool OnGame::onTouchBegan_Setting(Touch* touch, Event *unused_event)
@@ -658,24 +658,24 @@ void OnGame::onTouchEnded_Setting(Touch* touch, Event *unused_event)
 	Point touchPoint = touch->getLocation();
 
 
-	if (PopUpSetting::getInstance()->spr_icon_bgm->getBoundingBox().containsPoint(touchPoint))
-	{
-		PopUpSetting::getInstance()->bgmToggle();
-	}
-	else if (PopUpSetting::getInstance()->spr_icon_effect->getBoundingBox().containsPoint(touchPoint))
-	{
-		PopUpSetting::getInstance()->effectToggle();
-	}
+	//if (PopUpSetting::getInstance()->spr_icon_bgm->getBoundingBox().containsPoint(touchPoint))
+	//{
+	//	PopUpSetting::getInstance()->bgmToggle();
+	//}
+	//else if (PopUpSetting::getInstance()->spr_icon_effect->getBoundingBox().containsPoint(touchPoint))
+	//{
+	//	PopUpSetting::getInstance()->effectToggle();
+	//}
 
-	else if (PopUpSetting::getInstance()->spr_icon_vibrate->getBoundingBox().containsPoint(touchPoint))
-	{
-		PopUpSetting::getInstance()->vibrateToggle();
-	}
-	else if (PopUpSetting::getInstance()->spr_icon_close->getBoundingBox().containsPoint(touchPoint))
-	{
-		this->removeChild(PopUpSetting::getInstance()->getLayer());
-		_eventDispatcher->removeEventListener(listener_setting);
-	}
+	//else if (PopUpSetting::getInstance()->spr_icon_vibrate->getBoundingBox().containsPoint(touchPoint))
+	//{
+	//	PopUpSetting::getInstance()->vibrateToggle();
+	//}
+	//else if (PopUpSetting::getInstance()->spr_icon_close->getBoundingBox().containsPoint(touchPoint))
+	//{
+	//	this->removeChild(PopUpSetting::getInstance()->getLayer());
+	//	_eventDispatcher->removeEventListener(listener_setting);
+	//}
 }
 
 

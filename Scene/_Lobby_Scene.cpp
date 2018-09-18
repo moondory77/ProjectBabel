@@ -1,6 +1,5 @@
 ﻿#include "System/GameManager.h"
 #include "System/BGManager.h"
-#include "System/PopUps.h"
 #include "SimpleAudioEngine.h"
 
 #include "Event/Events.h"
@@ -47,7 +46,6 @@ bool Lobby::init()
 
 
 
-
 void Lobby::initBG()
 {
 	BGManager::getInstance()->loadBG();
@@ -65,66 +63,15 @@ void Lobby::initBG()
 	layer_hill->addChild(spr_hill);
 
 	iconHero = Sprite::create("motions/for_events/menu_cha/menu_character_1.png");
-	iconHero->setScale(DivForHorizontal(iconHero)*0.3f);
+	iconHero->setScale(DivForHorizontal(iconHero)*0.22f);
 	iconHero->setAnchorPoint(Point(0.5, 0));
 	iconHero->setPosition(Point(winSize().width*0.5f, -winSize().height*0.2));
-	layer_hill->addChild(iconHero);
+	this->addChild(iconHero, 3);
 }
 
 
 
-//
-//
-//////////////////////////////////////********셋팅 이벤트 리스너*********////////////////////////////////
-//bool Lobby::onTouchBegan_Setting(Touch* touch, Event *unused_event)
-//{
-//	
-//	Point touchPoint = touch->getLocation();
-//	/*
-//	if (PopUpSetting::getInstance()->
-//						spr_icon_bgm->getBoundingBox().containsPoint(touchPoint))
-//		return true;
-//	else if (PopUpSetting::getInstance()->
-//						spr_icon_effect->getBoundingBox().containsPoint(touchPoint))
-//		return true;
-//	else if (PopUpSetting::getInstance()->
-//						spr_icon_vibrate->getBoundingBox().containsPoint(touchPoint))
-//		return true;
-//	else if (PopUpSetting::getInstance()->
-//						spr_icon_close->getBoundingBox().containsPoint(touchPoint))
-//		return true;
-//	else
-//	*/
-//		return true;
-//	
-//}
-//void Lobby::onTouchEnded_Setting(Touch* touch, Event *unused_event)
-//{
-//	Point touchPoint = touch->getLocation();
-//
-//
-//	if (PopUpSetting::getInstance()->spr_icon_bgm->getBoundingBox().containsPoint(touchPoint))
-//	{
-//		PopUpSetting::getInstance()->bgmToggle();
-//	}
-//	else if (PopUpSetting::getInstance()->spr_icon_effect->getBoundingBox().containsPoint(touchPoint))
-//	{
-//		PopUpSetting::getInstance()->effectToggle();
-//	}
-//
-//	else if (PopUpSetting::getInstance()->spr_icon_vibrate->getBoundingBox().containsPoint(touchPoint))
-//	{
-//		PopUpSetting::getInstance()->vibrateToggle();
-//	}
-//	else if (PopUpSetting::getInstance()->spr_icon_close->getBoundingBox().containsPoint(touchPoint))
-//	{
-//		this->removeChild(PopUpSetting::getInstance()->getLayer());
-//		_eventDispatcher->removeEventListener(listener_setting);
-//		is_popup_on = false;
-//	}
-//}
-//
-//
+
 
 /*
 ///////////////////////////각 시나리오 이벤트 리스너에 대해서..////////////////////////////////////
@@ -176,8 +123,6 @@ void Lobby::onTouchEnded_Prac(Touch* touch, Event *unused_event)
 			m_cursor->setEvent();
 			m_cursor->startEvent();
 		}
-
-
 }
 */
 
