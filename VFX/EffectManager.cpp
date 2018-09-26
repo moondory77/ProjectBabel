@@ -25,7 +25,6 @@ void EffectManager::initEffect(EffectType spr_type, const char* tex_name, int fr
 }
 
 
-
 //labelEffectInfo √ ±‚»≠
 void EffectManager::initEffect(EffectType label_type, const char* tex_name)
 {

@@ -2,9 +2,9 @@
 #define __ABS_OBSTACLE_CONTAINER_H__
 
 #include "cocos2d.h"
-#include "OnGame/Character.h"
 #include "VFX/ParticleManager.h"
 #include "Obstacle/ObsBatchManager.h"
+#include "OnGame/Character.h"
 
 
 USING_NS_CC;

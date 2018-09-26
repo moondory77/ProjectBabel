@@ -126,7 +126,6 @@ private:
 	GridLayer() {};
 	static GridLayer* GridLayer_instance;
 
-
 	Layer *layer_grid;
 
 public:

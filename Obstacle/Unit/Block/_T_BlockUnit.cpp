@@ -1,6 +1,7 @@
 #include "_T_BlockUnit.h"
 #include "System/GameManager.h"
 #include "OnGame/JoyController.h"
+#include "OnGame/Character.h"
 #include "Obstacle/Container/Building/_T_BuildContainer.h"
 
 
@@ -39,7 +40,8 @@ void BlockUnit::positionUpdate(float deltaTime)
 	prevPos = cur_pos;
 	setPosition(updated_pos);
 
-	//충돌 발생 -> (Block - Character) X-Y 유효성 구별한 다음, Bounce Buffer에 저장
+
+	//충돌 발생 -> (Block - Character) X-Y 유효성 Filtering 후, Bounce Buffer에 저장
 	if (isCrashed(*mainChar))
 	{
 		//crash 직전 (Block <- 캐릭터 본체) Relative Vector
@@ -47,7 +49,6 @@ void BlockUnit::positionUpdate(float deltaTime)
 		//crash 직후 (Block <- 캐릭터 collider) Relative Vector
 		curRelativePos = updated_pos - mainChar->getColliderPosition();
 
-		//Delta Relative Vector 
 		crashVec = curRelativePos - prevRelativePos;		
 		//Crash Angle 측정 -> 어떤 충돌(x축, y축)인 지 필터링
 		crashAngle = CC_RADIANS_TO_DEGREES(ccpToAngle(mainChar->getPrevPos() - prevPos));
@@ -86,10 +87,13 @@ void BlockUnit::stateUpdate(float deltaTime)
 	{
 		int damage = 0;
 
-		if (damage = mainChar->chkAttckRadar(*sprUnit))
+		///-> world space로 변환
+		auto unit_boundary = sprUnit->getBoundingBox();
+		unit_boundary.origin = sprUnit->getParent()->convertToWorldSpace(unit_boundary.origin);
+		
+		if (damage = mainChar->chkAttackRadar(unit_boundary))
 		{
 			attackID = mainChar->getAttackID();
-
 			//데미지가 Block의 현재 체력 이상일 경우
 			if (curStrength < damage)
 				damage = curStrength;
@@ -123,7 +127,6 @@ void BlockUnit::stateUpdate(float deltaTime)
 			&& mainChar->specialRadar->getBoundingBox().containsPoint(this->getPosition())) {
 			updateForSpecial();
 	}*/
-
 
 
 	//방어 체크

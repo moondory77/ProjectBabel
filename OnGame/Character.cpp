@@ -7,49 +7,48 @@
 
 Character::Character() {
 	state = (charStateType)NONE;
+	SpriteFrameCache::getInstance()->addSpriteFramesWithFile("RoyalWeapon.plist");
 }
-
-Character::Character(Point initPos, float gravity, float jumpVelocity, int powerSP)
+Character::Character(Point initPos, float gravity, float jumpVelocity, int powerSP) : Character()
 {
-	//character state 초기화
-	state = (charStateType)NONE;
 	jumpVelo = jumpVelocity;
 	curVeloY = 0;
 	curGravity = gravity;
 	outerVeloY = 0;
 
 	landHeight = initPos.y;
+	//landHeight = 1800;
 	powerSP = 40;
 	powerNormal = 220;	//기본데미지 임시 셋팅
-
 	curCharAction = actNone;
 	curDefPoint = maxDefPoint;
 
 	//Layer 1 - sprChar
+	//sprChar = Sprite::create(poly.generatePolygon("motions/default_land/1.png"));
 	sprChar = Sprite::create("motions/default_land/1.png");
 	sprChar->setName("Body");
 	bodyScale = 0.108f;
+	//bodyScale = 0.5f;
 	sprChar->setScale(bodyScale * DivForHorizontal(sprChar));
-	sprChar->setPosition(initPos);
-	//sprChar->setAnchorPoint(Point(0.5f, 0));
+	sprChar->setPosition(initPos.x, initPos.y);
 	this->addChild(sprChar);
 
 	//Layer 2- sprCircle
-	sprCircle = Sprite::create("motions/circle.png");
+	sprCircle = Sprite::create("HeroCircle.png");
 	sprCircle->setName("Circle");
-	sprCircle->setPosition(sprChar->getContentSize().width / 2, sprChar->getContentSize().height*0.36);
+	sprCircle->setPosition(sprChar->getContentSize().width / 2, sprChar->getContentSize().height*0.38);
 	sprCircle->setOpacity(0);
-	sprCircle->setRotation(41);
 	sprChar->addChild(sprCircle);
+	sprCircle->setRotation(28);
 
 	//Layer 3 - sprWeapon
-	sprWeapon = Sprite::create("weapon/sword.png");
+	sprWeapon = Sprite::create("weapon/RoyalSword.png");
 	sprWeapon->setName("weapon");
-	defWpScale = 0.05f;
+	defWpScale = 0.08f;
 	curWpScale = defWpScale;
-	sprWeapon->setRotation(4);
-	sprWeapon->setAnchorPoint(Point(0.5f, 0.1f));
-	sprWeapon->setPosition(sprCircle->getContentSize().width*0.71f, sprCircle->getContentSize().height / 2);
+	sprWeapon->setRotation(OnCircleRot(-80.0f));
+	sprWeapon->setAnchorPoint(Point(0.5f, 0.14f));
+	sprWeapon->setPosition(sprCircle->getContentSize().width*0.77f, sprCircle->getContentSize().height / 2);
 	sprCircle->addChild(sprWeapon);	//더미용 원 => 위에 검 올림
 
 	//Layer  1 - collider Character
@@ -70,7 +69,7 @@ Character::Character(Point initPos, float gravity, float jumpVelocity, int power
 	attackRadar->ignoreAnchorPointForPosition(false);	//레이어의 앵커포인트 조절을 위해 필수
 	attackRadar->setAnchorPoint(Point(0.5, 0));
 	attackRadar->setPosition(sprChar->getContentSize().width / 2, sprChar->getContentSize().height*0.36);
-	attackRadar->setOpacity(0);
+	attackRadar->setOpacity(100);
 	sprChar->addChild(attackRadar);
 
 	//Layer 1 - 1
@@ -87,6 +86,9 @@ Character::Character(Point initPos, float gravity, float jumpVelocity, int power
 	sprChar->addChild(shieldRadar);
 
 
+	weaponDetector = new CollisionDetector("weapon/RoyalSword.png", sprWeapon, 40.0f);
+	sprWeapon->addChild(weaponDetector);
+
 	////필살기범위를 지정해주는 더미레이더
 	//specialRadar = LayerColor::create();
 	//specialRadar->setColor(Color3B::BLUE);
@@ -101,132 +103,137 @@ Character::Character(Point initPos, float gravity, float jumpVelocity, int power
 	setWpScale(curWpScale);
 	initMotionFrames();
 }
+
 Character::~Character() {
-	//cocos2d::Director::getInstance()->getScheduler()->unschedule("CharacterUpdate", this);
+	SpriteFrameCache::getInstance()->removeSpriteFramesFromFile("motions/Motion_Else.plist");
+	SpriteFrameCache::getInstance()->removeSpriteFramesFromFile("motions/Motion_Attack.plist");
+	SpriteFrameCache::getInstance()->removeSpriteFramesFromFile("motions/Motion_Finish.plist");
+	SpriteFrameCache::getInstance()->removeSpriteFramesFromFile("RoyalWeapon.plist");
 }
 
 //캐릭터 액션 애니메이션에 필요한 프레임 삽입
-void Character::initMotionFrames() {
-
-	//actNone 
-	SpriteFrameCache::getInstance()->removeSpriteFrames();
+void Character::initMotionFrames()
+{
 	SpriteFrameCache::getInstance()->addSpriteFramesWithFile("motions/Motion_Else.plist");
-
-	auto frame = SpriteFrameCache::getInstance()->getSpriteFrameByName(StringUtils::format("Else_Default.png"));
+	auto frame = SpriteFrameCache::getInstance()
+		->getSpriteFrameByName(StringUtils::format("Else_Default.png"));
 	motionFrames[actNone].pushBack(frame);
 
 	//actJumpUpReady
 	for (int i = 0; i < 3; i++) {
-		auto frame = SpriteFrameCache::getInstance()->getSpriteFrameByName(StringUtils::format("Else_JumpUp_Ready_%d.png", i + 1));
+		auto frame = SpriteFrameCache::getInstance()
+			->getSpriteFrameByName(StringUtils::format("Else_JumpUp_Ready_%d.png", i));
 		motionFrames[actJumpReady].pushBack(frame);
 	}
 	//actJumpUp
 	for (int i = 0; i < 3; i++) {
-		auto frame = SpriteFrameCache::getInstance()->getSpriteFrameByName(StringUtils::format("Else_JumpUp_%d.png", i + 1));
+		auto frame = SpriteFrameCache::getInstance()
+			->getSpriteFrameByName(StringUtils::format("Else_JumpUp_%d.png", i));
 		motionFrames[actJumpUp].pushBack(frame);
 	}
 	//actJumpDown
-	for (int i = 0; i < 5; i++) {
-		auto frame = SpriteFrameCache::getInstance()->getSpriteFrameByName(StringUtils::format("Else_JumpDown_%d.png", i + 1));
+	for (int i = 0; i < 7; i++) {
+		auto frame = SpriteFrameCache::getInstance()
+			->getSpriteFrameByName(StringUtils::format("Else_JumpDown_%d.png", i));
 		motionFrames[actJumpDown].pushBack(frame);
 	}
 	//actDefLand
 	for (int i = 0; i < 4; i++) {
-		auto frame = SpriteFrameCache::getInstance()->getSpriteFrameByName(StringUtils::format("Else_Defense_Land_%d.png", i + 1));
+		auto frame = SpriteFrameCache::getInstance()->getSpriteFrameByName(StringUtils::format("Else_Defense_Land_%d.png", i));
 		motionFrames[actDefLand].pushBack(frame);
 	}
 	//actDefLandEnd
-	for (int i = 4; i > 0; i--) {
-		auto frame = SpriteFrameCache::getInstance()->getSpriteFrameByName(StringUtils::format("Else_Defense_Land_%d.png", i));
+	for (int i = 0; i < 4; i++) {
+		auto frame = SpriteFrameCache::getInstance()->getSpriteFrameByName(StringUtils::format("Else_Defense_Land_%d.png", 3 - i));
 		motionFrames[actDefLandEnd].pushBack(frame);
 	}
 	//actDefJump
 	for (int i = 0; i < 4; i++) {
-		auto frame = SpriteFrameCache::getInstance()->getSpriteFrameByName(StringUtils::format("Else_Defense_Jump_%d.png", i + 1));
+		auto frame = SpriteFrameCache::getInstance()->getSpriteFrameByName(StringUtils::format("Else_Defense_Jump_%d.png", i));
 		motionFrames[actDefJump].pushBack(frame);
 	}
 	//actDefJumpEnd
-	for (int i = 4; i > 0; i--) {
-		auto frame = SpriteFrameCache::getInstance()->getSpriteFrameByName(StringUtils::format("Else_Defense_Jump_%d.png", i));
+	for (int i = 0; i < 4; i++) {
+		auto frame = SpriteFrameCache::getInstance()->getSpriteFrameByName(StringUtils::format("Else_Defense_Jump_%d.png", 3 - i));
 		motionFrames[actDefJumpEnd].pushBack(frame);
 	}
 	//actSPCLand
 	for (int i = 0; i < 5; i++) {
-		auto frame = SpriteFrameCache::getInstance()->getSpriteFrameByName(StringUtils::format("Else_Special_Land_%d.png", i + 1));
+		auto frame = SpriteFrameCache::getInstance()->getSpriteFrameByName(StringUtils::format("Else_Special_Land_%d.png", i));
 		motionFrames[actSPCLand].pushBack(frame);
 	}
 	//actSPCLandEnd
-	for (int i = 4; i > 0; i--) {
-		auto frame = SpriteFrameCache::getInstance()->getSpriteFrameByName(StringUtils::format("Else_Special_Land_%d.png", i));
+	for (int i = 0; i < 5; i++) {
+		auto frame = SpriteFrameCache::getInstance()->getSpriteFrameByName(StringUtils::format("Else_Special_Land_%d.png", 4 - i));
 		motionFrames[actSPCLandEnd].pushBack(frame);
 	}
 	//actSPCJump
 	for (int i = 0; i < 5; i++) {
-		auto frame = SpriteFrameCache::getInstance()->getSpriteFrameByName(StringUtils::format("Else_Special_Jump_%d.png", i + 1));
+		auto frame = SpriteFrameCache::getInstance()->getSpriteFrameByName(StringUtils::format("Else_Special_Jump_%d.png", i));
 		motionFrames[actSPCJump].pushBack(frame);
 	}
 	//actSPCJumpEnd
-	for (int i = 4; i > 0; i--) {
-		auto frame = SpriteFrameCache::getInstance()->getSpriteFrameByName(StringUtils::format("Else_Special_Jump_%d.png", i));
+	for (int i = 0; i < 5; i++) {
+		auto frame = SpriteFrameCache::getInstance()->getSpriteFrameByName(StringUtils::format("Else_Special_Jump_%d.png", 4 - i));
 		motionFrames[actSPCJumpEnd].pushBack(frame);
 	}
 	//actMoveLeft
 	for (int i = 0; i < 3; i++) {
-		auto frame = SpriteFrameCache::getInstance()->getSpriteFrameByName(StringUtils::format("Else_MoveLeft_%d.png", i + 1));
+		auto frame = SpriteFrameCache::getInstance()->getSpriteFrameByName(StringUtils::format("Else_MoveLeft_%d.png", i));
 		motionFrames[actMoveLeft].pushBack(frame);
 	}
 	//actMoveLeftEnd
-	for (int i = 3; i > 0; i--) {
-		auto frame = SpriteFrameCache::getInstance()->getSpriteFrameByName(StringUtils::format("Else_MoveLeft_%d.png", i));
+	for (int i = 0; i < 3; i++) {
+		auto frame = SpriteFrameCache::getInstance()->getSpriteFrameByName(StringUtils::format("Else_MoveLeft_%d.png", 2 - i));
 		motionFrames[actMoveLeftEnd].pushBack(frame);
 	}
 	//actMoveRight
 	for (int i = 0; i < 3; i++) {
-		auto frame = SpriteFrameCache::getInstance()->getSpriteFrameByName(StringUtils::format("Else_MoveRight_%d.png", i + 1));
+		auto frame = SpriteFrameCache::getInstance()->getSpriteFrameByName(StringUtils::format("Else_MoveRight_%d.png", i));
 		motionFrames[actMoveRight].pushBack(frame);
 	}
 	//actMoveRightEnd
-	for (int i = 3; i > 0; i--) {
-		auto frame = SpriteFrameCache::getInstance()->getSpriteFrameByName(StringUtils::format("Else_MoveRight_%d.png", i));
+	for (int i = 0; i < 3; i++) {
+		auto frame = SpriteFrameCache::getInstance()->getSpriteFrameByName(StringUtils::format("Else_MoveRight_%d.png", 2 - i));
 		motionFrames[actMoveRightEnd].pushBack(frame);
 	}
 
 
-	//actAtkLandReady
-	SpriteFrameCache::getInstance()->removeSpriteFrames();
+	//actAtkLandReady	
+	//SpriteFrameCache::getInstance()->removeSpriteFrames();
 	SpriteFrameCache::getInstance()->addSpriteFramesWithFile("motions/Motion_Attack.plist");
-	for (int i = 0; i < 5; i++) {
-		auto frame = SpriteFrameCache::getInstance()->getSpriteFrameByName(StringUtils::format("Attack_Land_Ready_%d.png", i + 1));
+	for (int i = 0; i < 6; i++) {
+		auto frame = SpriteFrameCache::getInstance()->getSpriteFrameByName(StringUtils::format("Attack_Land_Ready_%d.png", i));
 		motionFrames[actAtkLandReady].pushBack(frame);
 	}
 	//actAtkLandHit
-	for (int i = 0; i < 9; i++) {
-		auto frame = SpriteFrameCache::getInstance()->getSpriteFrameByName(StringUtils::format("Attack_Land_Hit_%d.png", i + 1));
+	for (int i = 0; i < 13; i++) {
+		auto frame = SpriteFrameCache::getInstance()->getSpriteFrameByName(StringUtils::format("Attack_Land_Hit_%d.png", i));
 		motionFrames[actAtkLandHit].pushBack(frame);
 	}
 	//actAtkLandBack
-	for (int i = 0; i < 6; i++) {
-		auto frame = SpriteFrameCache::getInstance()->getSpriteFrameByName(StringUtils::format("Attack_Land_Back_%d.png", i + 1));
+	for (int i = 0; i < 8; i++) {
+		auto frame = SpriteFrameCache::getInstance()->getSpriteFrameByName(StringUtils::format("Attack_Land_Back_%d.png", i));
 		motionFrames[actAtkLandBack].pushBack(frame);
 	}
 	//actAtkJumpReady
-	for (int i = 0; i < 5; i++) {
-		auto frame = SpriteFrameCache::getInstance()->getSpriteFrameByName(StringUtils::format("Attack_Jump_Ready_%d.png", i + 1));
+	for (int i = 0; i < 6; i++) {
+		auto frame = SpriteFrameCache::getInstance()->getSpriteFrameByName(StringUtils::format("Attack_Jump_Ready_%d.png", i));
 		motionFrames[actAtkJumpReady].pushBack(frame);
 	}
 	//actAtkJumpHit
-	for (int i = 0; i < 9; i++) {
-		auto frame = SpriteFrameCache::getInstance()->getSpriteFrameByName(StringUtils::format("Attack_Jump_Hit_%d.png", i + 1));
+	for (int i = 0; i < 13; i++) {
+		auto frame = SpriteFrameCache::getInstance()->getSpriteFrameByName(StringUtils::format("Attack_Jump_Hit_%d.png", i));
 		motionFrames[actAtkJumpHit].pushBack(frame);
 	}
 	//actAtkJumpBack
-	for (int i = 0; i < 6; i++) {
-		auto frame = SpriteFrameCache::getInstance()->getSpriteFrameByName(StringUtils::format("Attack_Jump_Back_%d.png", i + 1));
+	for (int i = 0; i < 8; i++) {
+		auto frame = SpriteFrameCache::getInstance()->getSpriteFrameByName(StringUtils::format("Attack_Jump_Back_%d.png", i));
 		motionFrames[actAtkJumpBack].pushBack(frame);
 	}
 
 	//initFinishFrame
-	SpriteFrameCache::getInstance()->removeSpriteFrames();
+	//SpriteFrameCache::getInstance()->removeSpriteFrames();
 	SpriteFrameCache::getInstance()->addSpriteFramesWithFile("motions/Motion_Finish.plist");
 	finishFrame[actNone] = SpriteFrameCache::getInstance()->getSpriteFrameByName("Default_Land.png");
 	finishFrame[actAtkLandReady] = SpriteFrameCache::getInstance()->getSpriteFrameByName("Attack_Land_Ready.png");
@@ -242,6 +249,8 @@ void Character::initMotionFrames() {
 	finishFrame[actSPCJump] = SpriteFrameCache::getInstance()->getSpriteFrameByName("Special_Jump.png");
 	finishFrame[actMoveLeft] = SpriteFrameCache::getInstance()->getSpriteFrameByName("Move_Left.png");
 	finishFrame[actMoveRight] = SpriteFrameCache::getInstance()->getSpriteFrameByName("Move_Right.png");
+
+
 }
 
 //현재 play되고 있는 charAction을 멈추고, 모션락을 획득
@@ -403,60 +412,28 @@ void Character::releaseMotionLock(charActionType input_action, charMotionElement
 	}
 };
 
-int Character::chkAttckRadar(const Sprite& attackable_unit)
+
+int Character::chkAttackRadar(Rect& attackable_unit)
 {
-	auto unit_bound_box = attackable_unit.getBoundingBox();
-	Point world_origin = attackable_unit.getParent()->convertToWorldSpace(unit_bound_box.origin);
-	Point trans_origin = sprChar->convertToNodeSpace(world_origin);
+	Rect rough_bound = attackable_unit;
+	rough_bound.origin = sprChar->convertToNodeSpace(attackable_unit.origin);
+	rough_bound.size.width /= sprChar->getScale();
+	rough_bound.size.height /= sprChar->getScale();
 
-	//bound_box를 attack radar의 좌표계로 transformatioin
-	unit_bound_box.origin = trans_origin;
-	unit_bound_box.size.operator/ (sprChar->getScale());
-
-
-	//프레임 드랍을 막기위해, Radar하는 Bounding 영역에 들어왔을 때만, 세부 데미지 계산
-	if (attackRadar->getBoundingBox().intersectsRect(unit_bound_box))
+	//AABB 형태로 rough하게 범위 탐지 후, 디테일한 boundary로 충돌감지
+	if (attackRadar->getBoundingBox().intersectsRect(rough_bound))
 	{
-		Point trans_pos = Point(unit_bound_box.getMidX(), unit_bound_box.getMidY());
-
-		//유효데미지 체크
-		Vec2 cur_attack_vector = trans_pos - sprCircle->getPosition();
-		float cur_dist = cur_attack_vector.getLength();
-		float cur_angle = ccpToAngle(cur_attack_vector);
-
-		//현재 공격이 유효타격 범위 안에 있는지를 검사 하여 데미지 계산
-		if (cur_dist < getWpHeight())
+		Point center_pos = Point(attackable_unit.getMidX(), attackable_unit.getMidY());	
+		///좌표, 스케일은 항상 world 기준으로 입력
+		if (weaponDetector->detectCollision(center_pos, attackable_unit.size.width / 2))
 		{
-			//유효 타격 범위 구함
-			float unit_scope = (atkScopeAngle.max - atkScopeAngle.min) / 3;
-			float min_bound = 2 * unit_scope * lapsedAtkTick;
-
-			if (atkScopeAngle.min + min_bound < cur_angle && cur_angle < atkScopeAngle.min + unit_scope + min_bound)
-			{
-				float damage_factor = cur_dist / getWpHeight();
-				return powerNormal * (1 - damage_factor*damage_factor);
-			}
+			float atk_dist = (Point(rough_bound.getMidX(), rough_bound.getMidY()) - sprCircle->getPosition()).getLengthSq();
+			float max_dist = getWpHeight() * getWpHeight();
+			return powerNormal * (1 - atk_dist/max_dist);	
 		}
 	}
 	return 0;
 };
-int Character::chkDefenseRadar(const Sprite& defensable)
-{
-	auto bound_box = defensable.getBoundingBox();
-	Point world_origin = defensable.getParent()->convertToWorldSpace(bound_box.origin);
-	Point trans_origin = sprChar->convertToNodeSpace(world_origin);
-
-	bound_box.origin = trans_origin;
-	bound_box.size.operator/ (sprChar->getScale());
-
-	//shield radar에 들어와 있는 block인지 체크
-	if (shieldRadar->getBoundingBox().intersectsRect(bound_box))
-	{
-		return 5;
-	}
-	else
-		return -1;
-}
 
 
 ////호출된 frame 시점에, blk이 받는 damage를 계산
@@ -515,6 +492,26 @@ int Character::chkDefenseRadar(const Sprite& defensable)
 //
 
 
+int Character::chkDefenseRadar(const Sprite& defensable)
+{
+	auto bound_box = defensable.getBoundingBox();
+	Point world_origin = defensable.getParent()->convertToWorldSpace(bound_box.origin);
+	Point trans_origin = sprChar->convertToNodeSpace(world_origin);
+
+	bound_box.origin = trans_origin;
+	bound_box.size.operator/ (sprChar->getScale());
+
+	//shield radar에 들어와 있는 block인지 체크
+	if (shieldRadar->getBoundingBox().intersectsRect(bound_box))
+	{
+		return 5;
+	}
+	else
+		return -1;
+}
+
+
+
 //charAction => Animation 액션을 실행
 void Character::playCharAction(charActionType targetAction) {
 
@@ -526,26 +523,21 @@ void Character::playCharAction(charActionType targetAction) {
 	case actJumpReady:
 	{
 		//case문 안에서 생성 구문 있을 때, {} 바인딩을 해줘야 하는듯.. 안하면 에러
-		auto delay = DelayTime::create(FRAME_DELAY*1.5f);
+		float delay_time = FRAME_DELAY*1.5f;
 		auto animation = Animation::createWithSpriteFrames(motionFrames[actJumpReady], FRAME_DELAY*1.5f);
-		auto animAction = Sequence::create(Animate::create(animation),
-			CallFunc::create([&]() {releaseMotionLock(actJumpReady, ANIMATION); }), nullptr);
+		auto animAction = Sequence::create(Animate::create(animation), CallFunc::create([&]() {releaseMotionLock(actJumpReady, ANIMATION); }), nullptr);
 		animAction->setTag(MOTION_ACTION);
 
 		//원 rotate액션 정의 - 애니메이션의 각 frame에 대해 위치 해야할 각도 지정
-		auto circle_rot_1 = RotateTo::create(0.0f, 38.0f);
-		auto circle_rot_2 = Sequence::create(delay, RotateTo::create(0.0f, 38.0f), nullptr);
-		auto circle_rot_3 = Sequence::create(delay, RotateTo::create(0.0f, 38.0f), nullptr);
-		auto circleAction = Sequence::create(circle_rot_1, circle_rot_2, circle_rot_3,
-			CallFunc::create([&]() {releaseMotionLock(actJumpReady, CIRCLE); }), nullptr);
+		auto circle_rot_1 = RotateTo::create(0.0f, 28.0f);
+		auto circle_rot_2 = RotateTo::create(delay_time * 2, 40.0f);
+		auto circleAction = Sequence::create(circle_rot_1, circle_rot_2, CallFunc::create([&]() {releaseMotionLock(actJumpReady, CIRCLE); }), nullptr);
 		circleAction->setTag(MOTION_ACTION);
 
 		//검 rotate액션 
-		auto wp_rot_1 = RotateTo::create(0.0f, 18.0f);
-		auto wp_rot_2 = Sequence::create(delay, RotateTo::create(0.0f, 18.0f), nullptr);
-		auto wp_rot_3 = Sequence::create(delay, RotateTo::create(0.0f, 18.0f), nullptr);
-		auto wpAction = Sequence::create(wp_rot_1, wp_rot_2, wp_rot_3,
-			CallFunc::create([&]() {releaseMotionLock(actJumpReady, WEAPON); }), nullptr);
+		auto wp_rot_1 = RotateTo::create(0.0f, OnCircleRot(-80.0f));
+		auto wp_rot_2 = RotateTo::create(delay_time * 2, OnCircleRot(-96.0f));
+		auto wpAction = Sequence::create(wp_rot_1, wp_rot_2, CallFunc::create([&]() {releaseMotionLock(actJumpReady, WEAPON); }), nullptr);
 		wpAction->setTag(MOTION_ACTION);
 
 		sprCircle->runAction(circleAction);
@@ -556,7 +548,7 @@ void Character::playCharAction(charActionType targetAction) {
 	case actJumpCancel:
 	{
 		//case문 안에서 초기화 시, {} 바인딩을 해줘야 하는듯.. 안하면 에러
-		auto delay = DelayTime::create(FRAME_DELAY*1.5f);
+		float delay_time = FRAME_DELAY*1.5f;
 		auto animation = Animation::createWithSpriteFrames(motionFrames[actJumpReady], FRAME_DELAY*1.5f);
 
 		auto animAction = Sequence::create(Animate::create(animation)->reverse(),
@@ -564,18 +556,16 @@ void Character::playCharAction(charActionType targetAction) {
 		animAction->setTag(MOTION_ACTION);
 
 		//원 rotate액션 정의 - 애니메이션의 각 frame에 대해 위치 해야할 각도 지정
-		auto circle_rot_1 = RotateTo::create(0.0f, 38.0f);
-		auto circle_rot_2 = Sequence::create(delay, RotateTo::create(0.0f, 38.0f), nullptr);
-		auto circle_rot_3 = Sequence::create(delay, RotateTo::create(0.0f, 38.0f), nullptr);
-		auto circleAction = Sequence::create(circle_rot_1, circle_rot_2, circle_rot_3,
+		auto circle_rot_1 = RotateTo::create(0.0f, 40.0f);
+		auto circle_rot_2 = RotateTo::create(delay_time * 2, 28.0f);
+		auto circleAction = Sequence::create(circle_rot_1, circle_rot_2,
 			CallFunc::create([&]() {releaseMotionLock(actJumpCancel, CIRCLE); }), nullptr);
 		circleAction->setTag(MOTION_ACTION);
 
 		//검 rotate액션 
-		auto wp_rot_1 = RotateTo::create(0.0f, 18.0f);
-		auto wp_rot_2 = Sequence::create(delay, RotateTo::create(0.0f, 18.0f), nullptr);
-		auto wp_rot_3 = Sequence::create(delay, RotateTo::create(0.0f, 18.0f), nullptr);
-		auto wpAction = Sequence::create(wp_rot_1, wp_rot_2, wp_rot_3,
+		auto wp_rot_1 = RotateTo::create(0.0f, OnCircleRot(-96.0f));
+		auto wp_rot_2 = RotateTo::create(0.0f, OnCircleRot(-80.0f));
+		auto wpAction = Sequence::create(wp_rot_1, wp_rot_2,
 			CallFunc::create([&]() {releaseMotionLock(actJumpCancel, WEAPON); }), nullptr);
 		wpAction->setTag(MOTION_ACTION);
 
@@ -587,26 +577,22 @@ void Character::playCharAction(charActionType targetAction) {
 	case actJumpUp:
 	{
 		//case문 안에서 초기화 시, {} 바인딩을 해줘야 하는듯.. 안하면 에러
-		auto delay = DelayTime::create(FRAME_DELAY*1.5f);
+		float delay_time = FRAME_DELAY*1.5f;
 		auto animation = Animation::createWithSpriteFrames(motionFrames[actJumpUp], FRAME_DELAY*1.5f);
 		auto animAction = Sequence::create(Animate::create(animation),
 			CallFunc::create([&]() {releaseMotionLock(actJumpUp, ANIMATION); }), nullptr);
 		animAction->setTag(MOTION_ACTION);
 
 		//원 rotate액션 정의 - 애니메이션의 각 frame에 대해 위치 해야할 각도 지정
-		auto circle_rot_1 = RotateTo::create(0.0f, 38.0f);
-		auto circle_rot_2 = Sequence::create(delay, RotateTo::create(0.0f, 38.0f), nullptr);
-		auto circle_rot_3 = Sequence::create(delay, RotateTo::create(0.0f, 38.0f), nullptr);
-		auto circleAction = Sequence::create(circle_rot_1, circle_rot_2, circle_rot_3,
-			CallFunc::create([&]() {releaseMotionLock(actJumpUp, CIRCLE); }), nullptr);
+		auto circle_rot_1 = RotateTo::create(0.0f, 40.0f);
+		auto circle_rot_2 = RotateTo::create(delay_time * 2, 48.0f);
+		auto circleAction = Sequence::create(circle_rot_1, circle_rot_2, CallFunc::create([&]() {releaseMotionLock(actJumpUp, CIRCLE); }), nullptr);
 		circleAction->setTag(MOTION_ACTION);
 
 		//검 rotate액션 
-		auto wp_rot_1 = RotateTo::create(0.0f, 18.0f);
-		auto wp_rot_2 = Sequence::create(delay, RotateTo::create(0.0f, 18.0f), nullptr);
-		auto wp_rot_3 = Sequence::create(delay, RotateTo::create(0.0f, 16.0f), nullptr);
-		auto wpAction = Sequence::create(wp_rot_1, wp_rot_2, wp_rot_3,
-			CallFunc::create([&]() {releaseMotionLock(actJumpUp, WEAPON); }), nullptr);
+		auto wp_rot_1 = RotateTo::create(0.0f, OnCircleRot(-106.0f));
+		auto wp_rot_2 = RotateTo::create(delay_time * 2, OnCircleRot(-74.0f));
+		auto wpAction = Sequence::create(wp_rot_1, wp_rot_2, CallFunc::create([&]() {releaseMotionLock(actJumpUp, WEAPON); }), nullptr);
 		wpAction->setTag(MOTION_ACTION);
 
 		sprCircle->runAction(circleAction);
@@ -616,30 +602,26 @@ void Character::playCharAction(charActionType targetAction) {
 	break;
 	case actJumpDown:
 	{
-		auto delay = DelayTime::create(FRAME_DELAY*1.5f);
+		float delay_time = FRAME_DELAY*1.5f;
 		auto animation = Animation::createWithSpriteFrames(motionFrames[actJumpDown], FRAME_DELAY*1.5f);
 		auto animAction = Sequence::create(Animate::create(animation),
 			CallFunc::create([&]() {releaseMotionLock(actJumpDown, ANIMATION); }), nullptr);
 		animAction->setTag(MOTION_ACTION);
 
 		//원 rotate액션 정의
-		auto circle_rot_1 = RotateTo::create(0.0f, 38.0f);
-		auto circle_rot_2 = Sequence::create(delay, RotateTo::create(0.0f, 30.0f), nullptr);
-		auto circle_rot_3 = Sequence::create(delay, RotateTo::create(0.0f, 30.0f), nullptr);
-		auto circle_rot_4 = Sequence::create(delay, RotateTo::create(0.0f, -20.0f), nullptr);
-		auto circle_rot_5 = Sequence::create(delay, RotateTo::create(0.0f, -20.0f), nullptr);
-		auto circle_seq = Sequence::create(circle_rot_1, circle_rot_2, circle_rot_3, circle_rot_4, circle_rot_5, nullptr);
+		auto circle_rot_1 = RotateTo::create(0.0f, 48.0f);
+		auto circle_rot_2 = RotateTo::create(delay_time * 2, 36.0f);
+		auto circle_rot_3 = RotateTo::create(delay_time * 3.8f, -28.0f);
+		auto circle_seq = Sequence::create(circle_rot_1, circle_rot_2, circle_rot_3, nullptr);
 		auto circleAction = Sequence::create(circle_seq,
 			CallFunc::create([&]() {releaseMotionLock(actJumpDown, CIRCLE); }), nullptr);
 		circleAction->setTag(MOTION_ACTION);
 
 		//검 rotate 액션 정의
-		auto wp_rot_1 = RotateTo::create(0.0f, 18.0f);
-		auto wp_rot_2 = Sequence::create(delay, RotateTo::create(0.0f, 18.0f), nullptr);
-		auto wp_rot_3 = Sequence::create(delay, RotateTo::create(0.0f, 18.0f), nullptr);
-		auto wp_rot_4 = Sequence::create(delay, RotateTo::create(0.0f, 40.0f), nullptr);
-		auto wp_rot_5 = Sequence::create(delay, RotateTo::create(0.0f, 40.0f), nullptr);
-		auto wp_seq = Sequence::create(wp_rot_1, wp_rot_2, wp_rot_3, wp_rot_4, wp_rot_5, nullptr);
+		auto wp_rot_1 = RotateTo::create(0.0f, OnCircleRot(-74.0f));
+		auto wp_rot_2 = RotateTo::create(delay_time * 2, OnCircleRot(-60.0f));
+		auto wp_rot_3 = RotateTo::create(delay_time * 3.8f, OnCircleRot(-30.0f));
+		auto wp_seq = Sequence::create(wp_rot_1, wp_rot_2, wp_rot_3, nullptr);
 		auto wpAction = Sequence::create(wp_seq,
 			CallFunc::create([&]() {releaseMotionLock(actJumpDown, WEAPON); }), nullptr);
 		wpAction->setTag(MOTION_ACTION);
@@ -657,15 +639,15 @@ void Character::playCharAction(charActionType targetAction) {
 		animAction->setTag(MOTION_ACTION);
 
 		//원 rotate액션 정의
-		auto circle_rot_1 = RotateTo::create(0, 50.0f);	//시작 시, 원 각도 약간 젖히기
-		auto circle_rot_2 = RotateBy::create(FRAME_DELAY * 0.64f * 4, -95.0f);
+		auto circle_rot_1 = RotateTo::create(0, 30.0f);	//시작 시, 원 각도 약간 (뒤로)젖히기
+		auto circle_rot_2 = RotateBy::create(FRAME_DELAY * 0.64f * 5, -80.0f);
 		auto circle_seq = Sequence::create(circle_rot_1, circle_rot_2, nullptr);
 		auto circleAction = Sequence::create(circle_seq, CallFunc::create([&]() {releaseMotionLock(actAtkLandReady, CIRCLE); }), nullptr);
 		circleAction->setTag(MOTION_ACTION);
 
 		//무기 rotate 액션 정의
-		auto wp_rot_1 = RotateTo::create(0, 6.0f);
-		auto wp_rot_2 = RotateBy::create(FRAME_DELAY * 0.64f * 4, 74.0f);
+		auto wp_rot_1 = RotateTo::create(0, OnCircleRot(-80.0f));	//시작 시, 원 각도 약간 (뒤로) 젖히기
+		auto wp_rot_2 = RotateBy::create(FRAME_DELAY * 0.64f * 5, 79.0f);
 		auto wp_seq = Sequence::create(wp_rot_1, wp_rot_2, nullptr);
 		auto wpAction = Sequence::create(wp_seq, CallFunc::create([&]() {releaseMotionLock(actAtkLandReady, WEAPON); }), nullptr);
 		wpAction->setTag(MOTION_ACTION);
@@ -677,33 +659,33 @@ void Character::playCharAction(charActionType targetAction) {
 	break;
 	case actAtkLandHit:
 	{
-		auto animation = Animation::createWithSpriteFrames(motionFrames[actAtkLandHit], FRAME_DELAY * 0.9f);
+		auto animation = Animation::createWithSpriteFrames(motionFrames[actAtkLandHit], FRAME_DELAY * 0.62f);
 		auto animAction = Sequence::create(Animate::create(animation),
 			CallFunc::create([&]() {releaseMotionLock(actAtkLandHit, ANIMATION); }), nullptr);
 		animAction->setTag(MOTION_ACTION);
 
 		//원 rotate액션 정의
-		auto circle_rot_1 = RotateTo::create(0, -45.0f);	//시작 시, 원 각도 약간 젖히기
-		auto circle_rot_2 = RotateBy::create(FRAME_DELAY * 0.9f * 5, -223.0f);
-		auto circle_rot_3 = DelayTime::create(FRAME_DELAY * 0.9f * 3);
+		auto circle_rot_1 = RotateTo::create(0, -47.0f);	//시작 시, 원 각도 약간 젖히기
+		auto circle_rot_2 = RotateBy::create(FRAME_DELAY * 0.62f * 8, -223.0f);
+		auto circle_rot_3 = DelayTime::create(FRAME_DELAY * 0.62f * 4);
 		auto circle_seq = Sequence::create(circle_rot_1, circle_rot_2, circle_rot_3, nullptr);
 		auto circleAction = Sequence::create(circle_seq,
 			CallFunc::create([&]() {releaseMotionLock(actAtkLandHit, CIRCLE); }), nullptr);
 		circleAction->setTag(MOTION_ACTION);
 
+
 		//무기 rotate 액션 정의
-		auto wp_rot_1 = RotateTo::create(0, 80.0f);
-		auto wp_rot_2 = RotateBy::create(FRAME_DELAY * 0.9f * 5, 120.0f);
-		auto wp_rot_3 = DelayTime::create(FRAME_DELAY * 0.9f * 3);
+		auto wp_rot_1 = RotateTo::create(0, OnCircleRot(4.0f));
+		auto wp_rot_2 = RotateBy::create(FRAME_DELAY * 0.62f * 8, 100.0f);
+		auto wp_rot_3 = DelayTime::create(FRAME_DELAY * 0.62f * 4);
 		auto wp_seq = Sequence::create(wp_rot_1, wp_rot_2, wp_rot_3, nullptr);
-		auto wpAction = Sequence::create(wp_seq,
-			CallFunc::create([&]() {releaseMotionLock(actAtkLandHit, WEAPON); }), nullptr);
+		auto wpAction = Sequence::create(wp_seq, CallFunc::create([&]() {releaseMotionLock(actAtkLandHit, WEAPON); }), nullptr);
 		wpAction->setTag(MOTION_ACTION);
 
 		//attack dist, angle 증가시키는 tick 스케쥴 실행
 		lapsedAtkScore = 0.0f;
 		lapsedAtkTick = 0.0f;
-		Director::getInstance()->getScheduler()->schedule(schedule_selector(Character::callback_tick_AtkScope), this, 1 / 60.f, false);
+		Director::getInstance()->getScheduler()->schedule(schedule_selector(Character::callback_tick_AtkScore), this, 1 / 60.f, false);
 
 		sprCircle->runAction(circleAction);
 		sprWeapon->runAction(wpAction);
@@ -719,7 +701,7 @@ void Character::playCharAction(charActionType targetAction) {
 
 		//원 rotate액션 정의
 		auto circle_rot_1 = RotateTo::create(0, finishRotation[actAtkLandHit].first);
-		auto circle_rot_2 = RotateBy::create(FRAME_DELAY * 0.5f * 5, 223.0f);
+		auto circle_rot_2 = RotateBy::create(FRAME_DELAY * 0.5f * 7, 220.0f);
 		auto circle_seq = Sequence::create(circle_rot_1, circle_rot_2, nullptr);
 		auto circleAction = Sequence::create(circle_seq,
 			CallFunc::create([&]() {releaseMotionLock(actAtkLandBack, CIRCLE); }), nullptr);
@@ -727,10 +709,9 @@ void Character::playCharAction(charActionType targetAction) {
 
 		//무기 rotate 액션 정의
 		auto wp_rot_1 = RotateTo::create(0, finishRotation[actAtkLandHit].second);
-		auto wp_rot_2 = RotateBy::create(FRAME_DELAY * 0.5f * 5, -120.0f);
+		auto wp_rot_2 = RotateBy::create(FRAME_DELAY * 0.5f * 7, -105.0f);
 		auto wp_seq = Sequence::create(wp_rot_1, wp_rot_2, nullptr);
-		auto wpAction = Sequence::create(wp_seq,
-			CallFunc::create([&]() {releaseMotionLock(actAtkLandBack, WEAPON); }), nullptr);
+		auto wpAction = Sequence::create(wp_seq, CallFunc::create([&]() {releaseMotionLock(actAtkLandBack, WEAPON); }), nullptr);
 		wpAction->setTag(MOTION_ACTION);
 
 		sprCircle->runAction(circleAction);
@@ -747,14 +728,14 @@ void Character::playCharAction(charActionType targetAction) {
 
 		//원 rotate액션 정의
 		auto circle_rot_1 = RotateTo::create(0, finishRotation[actAtkLandReady].first);
-		auto circle_rot_2 = RotateBy::create(FRAME_DELAY * 0.64f * 4, 86.0f);
+		auto circle_rot_2 = RotateBy::create(FRAME_DELAY * 0.64f * 5, 78.0f);
 		auto circle_seq = Sequence::create(circle_rot_1, circle_rot_2, nullptr);
 		auto circleAction = Sequence::create(circle_seq, CallFunc::create([&]() {releaseMotionLock(actAtkLandCancel, CIRCLE); }), nullptr);
 		circleAction->setTag(MOTION_ACTION);
 
 		//무기 rotate 액션 정의
 		auto wp_rot_1 = RotateTo::create(0, finishRotation[actAtkLandReady].second);
-		auto wp_rot_2 = RotateBy::create(FRAME_DELAY * 0.64f * 4, -76.0f);
+		auto wp_rot_2 = RotateBy::create(FRAME_DELAY * 0.64f * 5, -79.0f);
 		auto wp_seq = Sequence::create(wp_rot_1, wp_rot_2, nullptr);
 		auto wpAction = Sequence::create(wp_seq, CallFunc::create([&]() {releaseMotionLock(actAtkLandCancel, WEAPON); }), nullptr);
 		wpAction->setTag(MOTION_ACTION);
@@ -770,14 +751,14 @@ void Character::playCharAction(charActionType targetAction) {
 		auto animAction = Sequence::create(Animate::create(animation), CallFunc::create([&]() {releaseMotionLock(actAtkJumpReady, ANIMATION); }), nullptr);
 		animAction->setTag(MOTION_ACTION);
 
-		auto circle_rot_1 = RotateTo::create(0, 56.0f);
-		auto circle_rot_2 = RotateBy::create(FRAME_DELAY * 0.64f * 4, -98.0f);
+		auto circle_rot_1 = RotateTo::create(0, 30.0f);
+		auto circle_rot_2 = RotateBy::create(FRAME_DELAY * 0.64f * 5, -80.0f);
 		auto circle_seq = Sequence::create(circle_rot_1, circle_rot_2, nullptr);
 		auto circleAction = Sequence::create(circle_seq, CallFunc::create([&]() {releaseMotionLock(actAtkJumpReady, CIRCLE); }), nullptr);
 		circleAction->setTag(MOTION_ACTION);
 
-		auto wp_rot_1 = RotateTo::create(0, 10.0f);
-		auto wp_rot_2 = RotateBy::create(FRAME_DELAY * 0.64f * 4, 73.0f);
+		auto wp_rot_1 = RotateTo::create(0, OnCircleRot(-80.0f));
+		auto wp_rot_2 = RotateBy::create(FRAME_DELAY * 0.64f * 5, 79.0f);
 		auto wp_seq = Sequence::create(wp_rot_1, wp_rot_2, nullptr);
 		auto wpAction = Sequence::create(wp_seq, CallFunc::create([&]() {releaseMotionLock(actAtkJumpReady, WEAPON); }), nullptr);
 		wpAction->setTag(MOTION_ACTION);
@@ -789,28 +770,28 @@ void Character::playCharAction(charActionType targetAction) {
 	break;
 	case actAtkJumpHit:
 	{
-		auto animation = Animation::createWithSpriteFrames(motionFrames[actAtkJumpHit], FRAME_DELAY * 0.9f);
+		auto animation = Animation::createWithSpriteFrames(motionFrames[actAtkJumpHit], FRAME_DELAY * 0.62f);
 		auto animAction = Sequence::create(Animate::create(animation), CallFunc::create([&]() {releaseMotionLock(actAtkJumpHit, ANIMATION); }), nullptr);
 		animAction->setTag(MOTION_ACTION);
 
-		auto circle_rot_1 = RotateTo::create(0, -42.0f);
-		auto circle_rot_2 = RotateBy::create(FRAME_DELAY * 0.9f * 5, -226.0f);
-		auto circle_rot_3 = DelayTime::create(FRAME_DELAY * 0.9f * 3);
+		auto circle_rot_1 = RotateTo::create(0, -47.0f);
+		auto circle_rot_2 = RotateBy::create(FRAME_DELAY * 0.62f * 8, -223.0f);
+		auto circle_rot_3 = DelayTime::create(FRAME_DELAY * 0.62f * 4);
 		auto circle_seq = Sequence::create(circle_rot_1, circle_rot_2, circle_rot_3, nullptr);
 		auto circleAction = Sequence::create(circle_seq,
 			CallFunc::create([&]() {releaseMotionLock(actAtkJumpHit, CIRCLE); }), nullptr);
 		circleAction->setTag(MOTION_ACTION);
 
-		auto wp_rot_1 = RotateTo::create(0, 83.0f);
-		auto wp_rot_2 = RotateBy::create(FRAME_DELAY * 0.9f * 5, 117.0f);
-		auto wp_rot_3 = DelayTime::create(FRAME_DELAY * 0.9f * 3);
+		auto wp_rot_1 = RotateTo::create(0, OnCircleRot(4.0f));
+		auto wp_rot_2 = RotateBy::create(FRAME_DELAY * 0.62f * 8, 100.0f);
+		auto wp_rot_3 = DelayTime::create(FRAME_DELAY * 0.62f * 4);
 		auto wp_seq = Sequence::create(wp_rot_1, wp_rot_2, wp_rot_3, nullptr);
 		auto wpAction = Sequence::create(wp_seq, CallFunc::create([&]() {releaseMotionLock(actAtkJumpHit, WEAPON); }), nullptr);
 		wpAction->setTag(MOTION_ACTION);
 
 		lapsedAtkScore = 0.0f;
 		lapsedAtkTick = 0.0f;
-		Director::getInstance()->getScheduler()->schedule(schedule_selector(Character::callback_tick_AtkScope), this, 1 / 60.f, false);
+		Director::getInstance()->getScheduler()->schedule(schedule_selector(Character::callback_tick_AtkScore), this, 1 / 60.f, false);
 
 		sprCircle->runAction(circleAction);
 		sprWeapon->runAction(wpAction);
@@ -826,7 +807,7 @@ void Character::playCharAction(charActionType targetAction) {
 
 		//원 rotate액션 정의
 		auto circle_rot_1 = RotateTo::create(0, finishRotation[actAtkJumpHit].first);
-		auto circle_rot_2 = RotateBy::create(FRAME_DELAY * 0.5f * 5, 226.0f);
+		auto circle_rot_2 = RotateBy::create(FRAME_DELAY * 0.5f * 7, 220.0f);
 		auto circle_seq = Sequence::create(circle_rot_1, circle_rot_2, nullptr);
 		auto circleAction = Sequence::create(circle_seq,
 			CallFunc::create([&]() {releaseMotionLock(actAtkJumpBack, CIRCLE); }), nullptr);
@@ -834,10 +815,9 @@ void Character::playCharAction(charActionType targetAction) {
 
 		//무기 rotate 액션 정의
 		auto wp_rot_1 = RotateTo::create(0, finishRotation[actAtkJumpHit].second);
-		auto wp_rot_2 = RotateBy::create(FRAME_DELAY * 0.5f * 5, -117.0f);
+		auto wp_rot_2 = RotateBy::create(FRAME_DELAY * 0.5f * 7, -105.0f);
 		auto wp_seq = Sequence::create(wp_rot_1, wp_rot_2, nullptr);
-		auto wpAction = Sequence::create(wp_seq,
-			CallFunc::create([&]() {releaseMotionLock(actAtkJumpBack, WEAPON); }), nullptr);
+		auto wpAction = Sequence::create(wp_seq, CallFunc::create([&]() {releaseMotionLock(actAtkJumpBack, WEAPON); }), nullptr);
 		wpAction->setTag(MOTION_ACTION);
 
 		sprCircle->runAction(circleAction);
@@ -853,14 +833,14 @@ void Character::playCharAction(charActionType targetAction) {
 
 		//원 rotate액션 정의
 		auto circle_rot_1 = RotateTo::create(0, finishRotation[actAtkJumpReady].first);
-		auto circle_rot_2 = RotateBy::create(FRAME_DELAY * 0.64f * 4, 83.0f);
+		auto circle_rot_2 = RotateBy::create(FRAME_DELAY * 0.64f * 5, 78.0f);
 		auto circle_seq = Sequence::create(circle_rot_1, circle_rot_2, nullptr);
 		auto circleAction = Sequence::create(circle_seq, CallFunc::create([&]() {releaseMotionLock(actAtkJumpCancel, CIRCLE); }), nullptr);
 		circleAction->setTag(MOTION_ACTION);
 
 		//무기 rotate 액션 정의
 		auto wp_rot_1 = RotateTo::create(0, finishRotation[actAtkJumpReady].second);
-		auto wp_rot_2 = RotateBy::create(FRAME_DELAY * 0.64f * 4, -79.0f);
+		auto wp_rot_2 = RotateBy::create(FRAME_DELAY * 0.64f * 5, -79.0f);
 		auto wp_seq = Sequence::create(wp_rot_1, wp_rot_2, nullptr);
 		auto wpAction = Sequence::create(wp_seq, CallFunc::create([&]() {releaseMotionLock(actAtkJumpCancel, WEAPON); }), nullptr);
 		wpAction->setTag(MOTION_ACTION);
@@ -883,7 +863,7 @@ void Character::playCharAction(charActionType targetAction) {
 		circleAction->setTag(MOTION_ACTION);
 
 		//검 rotate 액션 정의
-		auto wp_rot_1 = RotateTo::create(0.0f, 27.0f);
+		auto wp_rot_1 = RotateTo::create(0.0f, OnCircleRot(27.0f));
 		auto wpAction = Sequence::create(wp_rot_1, CallFunc::create([&]() {releaseMotionLock(actDefLand, WEAPON); }), nullptr);
 		wpAction->setTag(MOTION_ACTION);
 
@@ -906,7 +886,7 @@ void Character::playCharAction(charActionType targetAction) {
 		circleAction->setTag(MOTION_ACTION);
 
 		//검 rotate액션 
-		auto wp_rot = Spawn::create(RotateTo::create(0.0f, 27.0f), delay, nullptr);
+		auto wp_rot = Spawn::create(RotateTo::create(0.0f, OnCircleRot(27.0f)), delay, nullptr);
 		auto wpAction = Sequence::create(wp_rot, wp_rot->clone(), wp_rot->clone(),
 			CallFunc::create([&]() {releaseMotionLock(actDefLandEnd, WEAPON); }), nullptr);
 		wpAction->setTag(MOTION_ACTION);
@@ -929,9 +909,8 @@ void Character::playCharAction(charActionType targetAction) {
 			CallFunc::create([&]() {releaseMotionLock(actDefJump, CIRCLE); }), nullptr);
 		circleAction->setTag(MOTION_ACTION);
 
-		auto wp_rot_1 = RotateTo::create(0.0f, 27.0f);
-		auto wpAction = Sequence::create(wp_rot_1,
-			CallFunc::create([&]() {releaseMotionLock(actDefJump, WEAPON); }), nullptr);
+		auto wp_rot_1 = RotateTo::create(0.0f, OnCircleRot(27.0f));
+		auto wpAction = Sequence::create(wp_rot_1, CallFunc::create([&]() {releaseMotionLock(actDefJump, WEAPON); }), nullptr);
 		wpAction->setTag(MOTION_ACTION);
 
 		sprCircle->runAction(circleAction);
@@ -954,7 +933,7 @@ void Character::playCharAction(charActionType targetAction) {
 		circleAction->setTag(MOTION_ACTION);
 
 		//검 rotate액션 
-		auto wp_rot = Spawn::create(RotateTo::create(0.0f, 27.0f), delay, nullptr);
+		auto wp_rot = Spawn::create(RotateTo::create(0.0f, OnCircleRot(27.0f)), delay, nullptr);
 		auto wpAction = Sequence::create(wp_rot, wp_rot->clone(), wp_rot->clone(),
 			CallFunc::create([&]() {releaseMotionLock(actDefJumpEnd, WEAPON); }), nullptr);
 		wpAction->setTag(MOTION_ACTION);
@@ -983,7 +962,7 @@ void Character::playCharAction(charActionType targetAction) {
 		circleAction->setTag(MOTION_ACTION);
 
 
-		auto wp_rot_1 = RotateTo::create(0, 20.0f);
+		auto wp_rot_1 = RotateTo::create(0, OnCircleRot(20.0f));
 		auto wp_rot_2 = RotateBy::create(FRAME_DELAY*0.6f * 5, 55.0f);
 		auto wp_rot_3 = RotateBy::create(FRAME_DELAY*0.6f * 5, 45.0f);
 		auto wp_seq = Sequence::create(wp_rot_1, wp_rot_2, wp_rot_3, nullptr);
@@ -1014,23 +993,20 @@ void Character::playCharAction(charActionType targetAction) {
 		break;
 	case actMoveLeft:
 	{
-		auto delay = DelayTime::create(FRAME_DELAY * 1.5f);
+		float delay_time = FRAME_DELAY * 1.5f;
 		auto animation = Animation::createWithSpriteFrames(motionFrames[actMoveLeft], FRAME_DELAY * 1.5f);
 		auto animAction = Sequence::create(Animate::create(animation),
 			CallFunc::create([&]() {releaseMotionLock(actMoveLeft, ANIMATION); }), nullptr);
 		animAction->setTag(MOTION_ACTION);
 
-		auto circle_rot_1 = RotateTo::create(0.0f, 28.0f);
-		auto circle_rot_2 = Sequence::create(delay, RotateTo::create(0.0f, 28.0f), nullptr);
-		auto circleAction = Sequence::create(circle_rot_1, circle_rot_2, circle_rot_2->clone(),
-			CallFunc::create([&]() {releaseMotionLock(actMoveLeft, CIRCLE); }), nullptr);
+		auto circle_rot_1 = RotateTo::create(0, 28.0f);
+		auto circle_rot_2 = RotateTo::create(delay_time * 2, 28.0f);
+		auto circleAction = Sequence::create(circle_rot_1, circle_rot_2, CallFunc::create([&]() {releaseMotionLock(actMoveLeft, CIRCLE); }), nullptr);
 		circleAction->setTag(MOTION_ACTION);
 
-		auto wp_rot_1 = RotateTo::create(0.0f, 10.0f);
-		auto wp_rot_2 = Sequence::create(delay, RotateTo::create(0.0f, 10.0f), nullptr);
-		auto wp_rot_3 = Sequence::create(delay, RotateTo::create(0.0f, 13.0f), nullptr);
-		auto wpAction = Sequence::create(wp_rot_1, wp_rot_2, wp_rot_3,
-			CallFunc::create([&]() {releaseMotionLock(actMoveLeft, WEAPON); }), nullptr);
+		auto wp_rot_1 = RotateTo::create(0.0f, OnCircleRot(-80.0f));
+		auto wp_rot_2 = RotateTo::create(delay_time * 2, OnCircleRot(-74.0f));
+		auto wpAction = Sequence::create(wp_rot_1, wp_rot_2, CallFunc::create([&]() {releaseMotionLock(actMoveLeft, WEAPON); }), nullptr);
 		wpAction->setTag(MOTION_ACTION);
 
 		sprCircle->runAction(circleAction);
@@ -1040,23 +1016,20 @@ void Character::playCharAction(charActionType targetAction) {
 	break;
 	case actMoveLeftEnd:
 	{
-		auto delay = DelayTime::create(FRAME_DELAY * 1.5f);
+		float delay_time = FRAME_DELAY * 1.5f;
 		auto animation = Animation::createWithSpriteFrames(motionFrames[actMoveLeftEnd], FRAME_DELAY * 1.5f);
 		auto animAction = Sequence::create(Animate::create(animation),
 			CallFunc::create([&]() {releaseMotionLock(actMoveLeftEnd, ANIMATION); }), nullptr);
 		animAction->setTag(MOTION_ACTION);
 
 		auto circle_rot_1 = RotateTo::create(0.0f, 28.0f);
-		auto circle_rot_2 = Sequence::create(delay, RotateTo::create(0.0f, 28.0f), nullptr);
-		auto circleAction = Sequence::create(circle_rot_1, circle_rot_2, circle_rot_2->clone(),
-			CallFunc::create([&]() {releaseMotionLock(actMoveLeftEnd, CIRCLE); }), nullptr);
+		auto circle_rot_2 = RotateTo::create(delay_time * 2, 28.0f);
+		auto circleAction = Sequence::create(circle_rot_1, circle_rot_2, CallFunc::create([&]() {releaseMotionLock(actMoveLeftEnd, CIRCLE); }), nullptr);
 		circleAction->setTag(MOTION_ACTION);
 
-		auto wp_rot_1 = RotateTo::create(0.0f, 13.0f);
-		auto wp_rot_2 = Sequence::create(delay, RotateTo::create(0.0f, 13.0f), nullptr);
-		auto wp_rot_3 = Sequence::create(delay, RotateTo::create(0.0f, 10.0f), nullptr);
-		auto wpAction = Sequence::create(wp_rot_1, wp_rot_2, wp_rot_3,
-			CallFunc::create([&]() {releaseMotionLock(actMoveLeftEnd, WEAPON); }), nullptr);
+		auto wp_rot_1 = RotateTo::create(0.0f, OnCircleRot(-74.0f));
+		auto wp_rot_2 = RotateTo::create(delay_time * 2, OnCircleRot(-80.0f));
+		auto wpAction = Sequence::create(wp_rot_1, wp_rot_2, CallFunc::create([&]() {releaseMotionLock(actMoveLeftEnd, WEAPON); }), nullptr);
 		wpAction->setTag(MOTION_ACTION);
 
 		sprCircle->runAction(circleAction);
@@ -1066,23 +1039,19 @@ void Character::playCharAction(charActionType targetAction) {
 	break;
 	case actMoveRight:
 	{
-		auto delay = DelayTime::create(FRAME_DELAY * 1.5f);
+		float delay_time = FRAME_DELAY * 1.5f;
 		auto animation = Animation::createWithSpriteFrames(motionFrames[actMoveRight], FRAME_DELAY * 1.5f);
-		auto animAction = Sequence::create(Animate::create(animation),
-			CallFunc::create([&]() {releaseMotionLock(actMoveRight, ANIMATION); }), nullptr);
+		auto animAction = Sequence::create(Animate::create(animation), CallFunc::create([&]() {releaseMotionLock(actMoveRight, ANIMATION); }), nullptr);
 		animAction->setTag(MOTION_ACTION);
 
-		auto circle_rot_1 = RotateTo::create(0.0f, 151.0f);
-		auto circle_rot_2 = Sequence::create(delay, RotateTo::create(0.0f, 151.0f), nullptr);
-		auto circleAction = Sequence::create(circle_rot_1, circle_rot_2, circle_rot_2->clone(),
-			CallFunc::create([&]() {releaseMotionLock(actMoveRight, CIRCLE); }), nullptr);
+		auto circle_rot_1 = RotateTo::create(0.0f, 150.0f);
+		auto circle_rot_2 = RotateBy::create(0, 10.0f);
+		auto circleAction = Sequence::create(circle_rot_1, circle_rot_2, CallFunc::create([&]() {releaseMotionLock(actMoveRight, CIRCLE); }), nullptr);
 		circleAction->setTag(MOTION_ACTION);
 
-		auto wp_rot_1 = RotateTo::create(0.0f, 161.0f);
-		auto wp_rot_2 = Sequence::create(delay, RotateTo::create(0.0f, 161.0f), nullptr);
-		auto wp_rot_3 = Sequence::create(delay, RotateTo::create(0.0f, 170.0f), nullptr);
-		auto wpAction = Sequence::create(wp_rot_1, wp_rot_2, wp_rot_3,
-			CallFunc::create([&]() {releaseMotionLock(actMoveRight, WEAPON); }), nullptr);
+		auto wp_rot_1 = RotateTo::create(0.0f, OnCircleRot(78.0f));
+		auto wp_rot_2 = RotateBy::create(delay_time * 2, -16.0f);
+		auto wpAction = Sequence::create(wp_rot_1, wp_rot_2, CallFunc::create([&]() {releaseMotionLock(actMoveRight, WEAPON); }), nullptr);
 		wpAction->setTag(MOTION_ACTION);
 
 		sprCircle->runAction(circleAction);
@@ -1092,23 +1061,20 @@ void Character::playCharAction(charActionType targetAction) {
 	break;
 	case actMoveRightEnd:
 	{
-		auto delay = DelayTime::create(FRAME_DELAY * 1.5f);
+		float delay_time = FRAME_DELAY * 1.5f;
 		auto animation = Animation::createWithSpriteFrames(motionFrames[actMoveRightEnd], FRAME_DELAY * 1.5f);
 		auto animAction = Sequence::create(Animate::create(animation),
 			CallFunc::create([&]() {releaseMotionLock(actMoveRightEnd, ANIMATION); }), nullptr);
 		animAction->setTag(MOTION_ACTION);
 
-		auto circle_rot_1 = RotateTo::create(0.0f, 151.0f);
-		auto circle_rot_2 = Sequence::create(delay, RotateTo::create(0.0f, 151.0f), nullptr);
-		auto circleAction = Sequence::create(circle_rot_1, circle_rot_2, circle_rot_2->clone(),
-			CallFunc::create([&]() {releaseMotionLock(actMoveRightEnd, CIRCLE); }), nullptr);
+		auto circle_rot_1 = RotateTo::create(0.0f, 160.0f);
+		auto circle_rot_2 = RotateBy::create(0, -10.0f);
+		auto circleAction = Sequence::create(circle_rot_1, circle_rot_2, CallFunc::create([&]() {releaseMotionLock(actMoveRightEnd, CIRCLE); }), nullptr);
 		circleAction->setTag(MOTION_ACTION);
 
-		auto wp_rot_1 = RotateTo::create(0.0f, 170.0f);
-		auto wp_rot_2 = Sequence::create(delay, RotateTo::create(0.0f, 170.0f), nullptr);
-		auto wp_rot_3 = Sequence::create(delay, RotateTo::create(0.0f, 161.0f), nullptr);
-		auto wpAction = Sequence::create(wp_rot_1, wp_rot_2, wp_rot_3,
-			CallFunc::create([&]() {releaseMotionLock(actMoveRightEnd, WEAPON); }), nullptr);
+		auto wp_rot_1 = RotateTo::create(0.0f, OnCircleRot(62.0f));
+		auto wp_rot_2 = RotateBy::create(delay_time * 2, 16.0f);
+		auto wpAction = Sequence::create(wp_rot_1, wp_rot_2, CallFunc::create([&]() {releaseMotionLock(actMoveRightEnd, WEAPON); }), nullptr);
 		wpAction->setTag(MOTION_ACTION);
 
 		sprCircle->runAction(circleAction);
@@ -1337,7 +1303,6 @@ void Character::changeCharMotion(bool isAdd, charStateType targetState)
 	}
 }
 
-
 void Character::addState(charStateType aState)
 {
 	//새로운 state 삽입 시도에만, 삽입
@@ -1521,6 +1486,8 @@ void Character::positionUpdate(float deltaTime) {
 }
 void Character::stateUpdate(float deltaTime)
 {
+	weaponDetector->drawOutline();
+	
 	//(collider의 위치)에 본체(sprChar)를 calibration 
 	setSprPosition(getColliderPosition());
 
@@ -1551,7 +1518,6 @@ void Character::stateUpdate(float deltaTime)
 
 	stateTransitionUpdate();
 
-
 	//방어 게이지 업데이트
 	if (isDefense()) {
 		if (curDefPoint > 0)
@@ -1575,6 +1541,7 @@ void Character::stateUpdate(float deltaTime)
 	//}
 	//CCLOG("character state is %d", state);
 }
+
 void Character::stateTransitionUpdate()
 {
 	//#1 DEFENSE transition
@@ -1735,28 +1702,28 @@ void Character::stateTransitionUpdate()
 void Character::setWpScale(float input_wp_scale) {
 
 	curWpScale = input_wp_scale;
-	//CCLOG("wp scale set : %.2f", curWpScale);
 	sprWeapon->setScale(curWpScale * DivForHorizontal(sprWeapon) / sprChar->getScale());
 
 	//(wp_scale + body_scale)의 기준 스케일을 구해, 그 비율로 레이더 크기 증가
-	float radar_x_scale = bodyScale / 2 + getWpLengthScale() * 0.8f;
+	float radar_x_scale = bodyScale / 2 + getWpLengthScale() * 1.6f;
 	float radar_y_scale = getWpLengthScale();
 
-	attackRadar->setScaleX(radar_x_scale / sprChar->getScale() * 1.75f);
+	attackRadar->setScaleX(radar_x_scale / sprChar->getScale());
 	attackRadar->setScaleY(radar_y_scale / sprChar->getScale() / winAspectRatio());
 }
 
 
 
-void Character::callback_tick_AtkScope(float deltaTime)
+
+void Character::callback_tick_AtkScore(float deltaTime)
 {
 	EffectManager::getInstance()->displayAtkScore(lapsedAtkScore, Point::ZERO, 2.0f, *UICanvas);
 	lapsedAtkTick += deltaTime / (FRAME_DELAY * 0.9f * 8);
-	
+
 	//tick time이 모두 지나면 스케쥴 해제
 	if (lapsedAtkTick > 1) {
 		lapsedAtkTick = 1.0f;
-		Director::getInstance()->getScheduler()->unschedule(schedule_selector(Character::callback_tick_AtkScope), this);
+		Director::getInstance()->getScheduler()->unschedule(schedule_selector(Character::callback_tick_AtkScore), this);
 	}
 };
 
@@ -1788,13 +1755,11 @@ void Character::callback_FinishSpcIntro(Ref* sender) {
 		->schedule(std::bind(&Character::updateSpecialID, this, std::placeholders::_1),
 			this, 0.15f, 19, 0.15f, false, "updateSpecialID");
 }
-
 void Character::callback_DelSpc(Ref* sender) {
 
 	//CCLOG("Delete Special State!!!!");
 	this->delState(SPC_ATK);
 }
-
 
 
 //void Character::callback_DelCrash(Ref* sender) {
@@ -1810,10 +1775,6 @@ void Character::callback_DelSpc(Ref* sender) {
 //	if (isCrash() && isAtLand())
 //		this->addState(PRESSED);
 //}
-
-
-
-
 
 int Character::getSpecialPoint(int combo)
 {

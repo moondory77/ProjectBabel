@@ -211,19 +211,19 @@ void StatusLobby::initUI()
 	iconTarget[BACK]->setOpacity(0);
 	this->addChild(iconTarget[BACK]);
 
-	iconTarget[SWORD] = Sprite::createWithSpriteFrame(SpriteFrameCache::getInstance()->getSpriteFrameByName("c1.png"));
-	iconTarget[SWORD]->setScale(DivForHorizontal(iconTarget[SWORD])*0.18f);
+	iconTarget[SWORD] = Sprite::createWithSpriteFrame(SpriteFrameCache::getInstance()->getSpriteFrameByName("RoyalSword.png"));
+	iconTarget[SWORD]->setScale(DivForHorizontal(iconTarget[SWORD])*0.12f);
 	iconTarget[SWORD]->setAnchorPoint(Point(0.5, 0));
 	iconTarget[SWORD]->setPosition(Point(winSize().width*0.32f, winSize().height*0.22f));
 	iconTarget[SWORD]->setOpacity(0);
 	this->addChild(iconTarget[SWORD]);
 
-	iconTarget[BAT] = Sprite::createWithSpriteFrame(SpriteFrameCache::getInstance()->getSpriteFrameByName("c2.png"));
-	iconTarget[BAT]->setScale(DivForHorizontal(iconTarget[BAT])*0.2f, DivForVertical(iconTarget[BAT])*0.26f);
-	iconTarget[BAT]->setAnchorPoint(Point(0.5, 0));
-	iconTarget[BAT]->setPosition(Point(winSize().width*0.68f, winSize().height*0.22f));
-	iconTarget[BAT]->setOpacity(0);
-	this->addChild(iconTarget[BAT]);
+	iconTarget[AXE] = Sprite::createWithSpriteFrame(SpriteFrameCache::getInstance()->getSpriteFrameByName("RoyalAxe.png"));
+	iconTarget[AXE]->setScale(DivForHorizontal(iconTarget[AXE])*0.12f);
+	iconTarget[AXE]->setAnchorPoint(Point(0.5, 0));
+	iconTarget[AXE]->setPosition(Point(winSize().width*0.68f, winSize().height*0.22f));
+	iconTarget[AXE]->setOpacity(0);
+	this->addChild(iconTarget[AXE]);
 
 
 	iconTarget[HERO_CIRCLE] = Sprite::create("motions/circle.png");
@@ -234,7 +234,7 @@ void StatusLobby::initUI()
 	iconTarget[HERO]->addChild(iconTarget[HERO_CIRCLE]);
 
 
-	iconTarget[HERO_WEAPON] = Sprite::createWithSpriteFrame(SpriteFrameCache::getInstance()->getSpriteFrameByName("c1.png"));
+	iconTarget[HERO_WEAPON] = Sprite::createWithSpriteFrame(SpriteFrameCache::getInstance()->getSpriteFrameByName("DefaultSword.png"));
 	iconTarget[HERO_WEAPON]->setOpacity(0);
 	iconTarget[HERO_WEAPON]->setRotation(4);
 	iconTarget[HERO_WEAPON]->setAnchorPoint(Point(0.5f, 0.11f));
@@ -284,7 +284,7 @@ void StatusLobby::onTouchEnded_Status(Touch* touch, Event *unused_event)
 		//(현재무기 탭) 메뉴 바 약간좌측으로 '감추는' 액션(spr_icon_weapon)
 		iconTarget[WEAPON_TAB]->runAction(MoveBy::create(1.0f, Point(-winSize().width*0.6f, 0)));
 		iconTarget[SWORD]->runAction(FadeIn::create(1.2f));
-		iconTarget[BAT]->runAction(FadeIn::create(1.2f));
+		iconTarget[AXE]->runAction(FadeIn::create(1.2f));
 		iconTarget[BACK]->runAction(FadeOut::create(1.2f));
 		this->runAction(Sequence::create(DelayTime::create(1.5f),
 			CallFunc::create([&]() {listenerWpChange->setEnabled(true); }), nullptr));
@@ -325,7 +325,7 @@ bool StatusLobby::onTouchBegan_WpChange(Touch* touch, Event* unused_event)
 		iconTouchID[SWORD] = touch->getID();
 		return true;
 	}
-	if (iconTarget[BAT]->getBoundingBox().containsPoint(touchPos)) 
+	if (iconTarget[AXE]->getBoundingBox().containsPoint(touchPos)) 
 	{
 		//iconTouchID[BAT] = touch->getID();
 		return true;
@@ -342,7 +342,7 @@ void StatusLobby::onTouchEnded_WpChange(Touch* touch, Event *unused_event)
 		//(현재무기 탭) 메뉴 바 약간좌측으로 '감추는' 액션(spr_icon_weapon)
 		iconTarget[WEAPON_TAB]->runAction(MoveBy::create(1.0f, Point(winSize().width*0.6f, 0)));
 		iconTarget[SWORD]->runAction(FadeOut::create(1.2f));
-		iconTarget[BAT]->runAction(FadeOut::create(1.2f));
+		iconTarget[AXE]->runAction(FadeOut::create(1.2f));
 		iconTarget[BACK]->runAction(FadeIn::create(1.2f));
 
 		listenerWpChange->setEnabled(false);
@@ -350,7 +350,6 @@ void StatusLobby::onTouchEnded_WpChange(Touch* touch, Event *unused_event)
 		this->runAction(Sequence::create(DelayTime::create(1.2f),
 			CallFunc::create([&]() 
 		{
-			//iconTarget[HERO_WEAPON]->setSpriteFrame(SpriteFrameCache::getInstance()->getSpriteFrameByName("Sword.png"));
 			listenerStatus->setEnabled(true);
 		}),
 			nullptr));
@@ -360,15 +359,15 @@ void StatusLobby::onTouchEnded_WpChange(Touch* touch, Event *unused_event)
 	if (iconTarget[SWORD]->getBoundingBox().containsPoint(touchPos)
 		&& (touch->getID() == iconTouchID[SWORD]))
 	{
-		iconTarget[HERO_WEAPON]->setSpriteFrame(SpriteFrameCache::getInstance()->getSpriteFrameByName("c1.png"));
+		iconTarget[HERO_WEAPON]->setSpriteFrame(SpriteFrameCache::getInstance()->getSpriteFrameByName("RoyalSword.png"));
 		eventList[WeaponChange]->playBox();
 		return;
 	}
 
-	if (iconTarget[BAT]->getBoundingBox().containsPoint(touchPos)
+	if (iconTarget[AXE]->getBoundingBox().containsPoint(touchPos)
 		/*&& (touch->getID() == iconTouchID[BAT])*/)
 	{
-		iconTarget[HERO_WEAPON]->setSpriteFrame(SpriteFrameCache::getInstance()->getSpriteFrameByName("c2.png"));
+		iconTarget[HERO_WEAPON]->setSpriteFrame(SpriteFrameCache::getInstance()->getSpriteFrameByName("RoyalAxe.png"));
 		eventList[WeaponChange]->playBox();
 		return;
 	}

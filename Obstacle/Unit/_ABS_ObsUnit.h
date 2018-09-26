@@ -21,9 +21,6 @@ protected:
 public:
 
 	bool isAlive() { return this->isAliveFlag; };
-	Point getPosition() { return Point(sprUnit->getBoundingBox().getMidX(), sprUnit->getBoundingBox().getMidY()); }
-	float getPositionX() { return sprUnit->getBoundingBox().getMidX(); }
-	float getPositionY() { return sprUnit->getBoundingBox().getMidY(); }
 
 	float getTopY() { return sprUnit->getBoundingBox().getMaxY(); }
 	float getBottomY() { return sprUnit->getBoundingBox().getMinY(); }
@@ -34,9 +31,14 @@ public:
 	float getWidth() { return (sprUnit->getBoundingBox().getMaxX() - sprUnit->getBoundingBox().getMinX()); }
 	float getHeight() { return (sprUnit->getBoundingBox().getMaxY() - sprUnit->getBoundingBox().getMinY()); }
 
-
 	virtual void stateUpdate(float deltaTime) = 0;
 	virtual void positionUpdate(float deltaTime) = 0;	
+	
+
+	Point getPosition() { return Point(sprUnit->getBoundingBox().getMidX(), sprUnit->getBoundingBox().getMidY()); }
+	float getPositionX() { return sprUnit->getBoundingBox().getMidX(); }
+	float getPositionY() { return sprUnit->getBoundingBox().getMidY(); }
+
 	virtual void setPosition(Point pos) = 0;
 	virtual void setPositionX(float newX) = 0;
 	virtual void setPositionY(float newY) = 0;

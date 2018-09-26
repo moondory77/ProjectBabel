@@ -110,7 +110,6 @@ public:
 	void BFS(int chunk_id, int caller_idx);
 
 
-
 	inline int get1DIndex(int row_idx, int col_idx) { return row_idx * numCol + col_idx; };
 	inline pair<int, int> get2DIndex(int linked_idx) { return pair<int, int> {linked_idx / numCol, linked_idx % numCol}; };
 	inline int getAliveUnitCnt() { return numRow * numCol - brokenCnt; };

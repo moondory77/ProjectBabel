@@ -143,7 +143,6 @@ void OnGame::initCamera() {
 
 	movingLayer->addChild(cameraTarget);
 	followCenter = CustomFollow::create(cameraTarget, Rect::ZERO);
-
 	movingLayer->runAction(followCenter);
 }
 
@@ -298,7 +297,6 @@ void OnGame::MainScheduler(float deltaTime) {
 		while (iter != activeBuildList.end())
 		{
 			(*iter)->update(deltaTime);
-
 			if (!(*iter)->isAlive())
 			{
 				(*iter)->removeFromParent();
@@ -308,6 +306,7 @@ void OnGame::MainScheduler(float deltaTime) {
 			else
 				iter++;
 		}
+
 
 		// 3 - 캐릭터 state 업데이트
 		mainChar->stateUpdate(deltaTime);
