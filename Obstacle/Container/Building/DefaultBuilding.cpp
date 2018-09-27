@@ -87,7 +87,6 @@ void DefaultBuilding::update(float deltaTime)
 					CallFunc::create([&](){ rigidFactor = 1.0f; }), nullptr);
 			this->runAction(rigid_in_attack);
 		}
-	
 		/*if ((frameDamage > 100)
 			&& (mainChar.getWpScale() < 0.4f))
 		{
@@ -95,9 +94,7 @@ void DefaultBuilding::update(float deltaTime)
 		}*/
 	}
 
-
 	mainChar.lapsedAtkScore += frameDamage;
-
 };
 
 

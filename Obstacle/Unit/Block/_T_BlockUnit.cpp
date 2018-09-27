@@ -44,40 +44,48 @@ void BlockUnit::positionUpdate(float deltaTime)
 	//충돌 발생 -> (Block - Character) X-Y 유효성 Filtering 후, Bounce Buffer에 저장
 	if (isCrashed(*mainChar))
 	{
-		//crash 직전 (Block <- 캐릭터 본체) Relative Vector
+		//crash 직전 (충돌 시작)
 		prevRelativePos = this->prevPos - mainChar->getPrevPos();
-		//crash 직후 (Block <- 캐릭터 collider) Relative Vector
+		//crash 직후 (충돌 감지)
 		curRelativePos = updated_pos - mainChar->getColliderPosition();
 
-		crashVec = curRelativePos - prevRelativePos;		
-		//Crash Angle 측정 -> 어떤 충돌(x축, y축)인 지 필터링
+		//Crash 발생 동안의, delta Momentum을 구한다  
+		crashVec = curRelativePos - prevRelativePos;
 		crashAngle = CC_RADIANS_TO_DEGREES(ccpToAngle(mainChar->getPrevPos() - prevPos));
 
+		//캐릭터 콜라이더(AABB)의 가로-세로 사이각을 기준으로 둔 다음, X-Y축 필터링
+		auto body_size = mainChar->Collider.body->getBoundingBox().size;
+		float body_aspect_angle = CC_RADIANS_TO_DEGREES(ccpToAngle(Vec2(body_size.width, body_size.height)));
+		//CCLOG("body aspect angle is %.2f", body_aspect_angle);
+
 		//x축 유효 bounce
-		if ((120.0f < crashAngle && crashAngle <= 180.0f)
-			|| (-180.0f <= crashAngle && crashAngle < -120.0f)
-			|| (-60.0f < crashAngle && crashAngle < 60.0f))
+		if ((-body_aspect_angle < crashAngle && crashAngle < body_aspect_angle)
+			|| ((180.0f - body_aspect_angle) < crashAngle && crashAngle <= 180.0f)
+			|| (-180.0f <= crashAngle && (crashAngle <= -180.0f + body_aspect_angle)))
 		{
 			container->bufferCrashX.push_back(unitIdx);
 		}
 
-		//y축 유효한 bounce
-		if ((60.0f < crashAngle && crashAngle < 120.0f)
-			|| (-120.0f < crashAngle && crashAngle < -60.0f))
+		//y축 유효 bounce
+		if ((body_aspect_angle < crashAngle && crashAngle < (180.0f - body_aspect_angle))
+			|| ((-180.0f + body_aspect_angle) < crashAngle && crashAngle < -body_aspect_angle))
 		{
-			//CCLOG("[%d] bloock crashVector is [%.2f, %.2f]", unitIdx, crashVec.x, crashVec.y);
 			mainChar->addState(CRASH);
 			mainChar->setOuterVeloY(blk_delta_velo);
 			container->bufferCrashY.push_back(unitIdx);
 		}
+
 	}
 	else
 	{
 		crashVec = Vec2::ZERO;
 		crashAngle = 0.0f;
 	}
-
 }
+
+
+
+
 void BlockUnit::stateUpdate(float deltaTime)
 {
 	//공격에 대한 update
@@ -90,7 +98,7 @@ void BlockUnit::stateUpdate(float deltaTime)
 		///-> world space로 변환
 		auto unit_boundary = sprUnit->getBoundingBox();
 		unit_boundary.origin = sprUnit->getParent()->convertToWorldSpace(unit_boundary.origin);
-		
+
 		if (damage = mainChar->chkAttackRadar(unit_boundary))
 		{
 			attackID = mainChar->getAttackID();
@@ -175,8 +183,24 @@ void BlockUnit::breakSelf()
 };
 
 
-bool BlockUnit::isCrashed(Character& mainChar) {
-	return mainChar.colliderChar->getBoundingBox().intersectsCircle(getPosition(), getHeight() / 2);
+bool BlockUnit::isCrashed(Character& main_char) {
+
+	auto unit_boundary = sprUnit->getBoundingBox();
+	bool isCrashedFlag = false;
+
+	if (unit_boundary.containsPoint(main_char.getTopPoint()))
+		isCrashedFlag = mainChar->Collider.isCrashed[0] = true;
+
+	if (unit_boundary.containsPoint(mainChar->getRightPoint()))
+		isCrashedFlag = mainChar->Collider.isCrashed[1] = true;
+
+	if (unit_boundary.containsPoint(mainChar->getBottomPoint()))
+		isCrashedFlag = mainChar->Collider.isCrashed[2] = true;
+
+	if (unit_boundary.containsPoint(mainChar->getLeftPoint()))
+		isCrashedFlag = mainChar->Collider.isCrashed[3] = true;
+
+	return isCrashedFlag;
 }
 
 
@@ -185,7 +209,7 @@ void BlockUnit::updateForDefense() {
 	if (defenseID != mainChar->getDefenseID())
 	{
 		//mainChar->setOuterVelocity(container->getDeltaVelocity());
-		
+
 		//컨테이너의 가속도를 직접 변경 (다음 프레임부터 적용)
 		container->setVeloY(8.0f);
 		defenseID = mainChar->getDefenseID();
@@ -196,11 +220,11 @@ void BlockUnit::updateForDefense() {
 //범위 내에서 튕겨나가는지 여부 / 거리 반환
 float BlockUnit::isDefensibleRange() {
 
-	float radar_ht = mainChar->shieldRadar->getBoundingBox().size.height;
-	float radar_wd = mainChar->shieldRadar->getBoundingBox().size.width / 2;
-	float max_range = sqrt(radar_ht*radar_ht + radar_wd*radar_wd);
+	float radar_ht = mainChar->Radar.defense->getBoundingBox().size.height;
+	float radar_wd = mainChar->Radar.defense->getBoundingBox().size.width / 2;
+	float max_range = sqrt(radar_ht*radar_ht + radar_wd * radar_wd);
 
-	Vec2 defensible_vector = getPosition() - mainChar->sprChar->getPosition();
+	Vec2 defensible_vector = getPosition() - mainChar->getPosition();
 	float radian = ccpToAngle(defensible_vector);
 	float distance = defensible_vector.getLength();
 
@@ -267,8 +291,8 @@ void BlockUnit::updateForSpecial()
 
 float BlockUnit::isSpecialRange()
 {
-	float limit_x = mainChar->specialRadar->getBoundingBox().getMaxX() - mainChar->specialRadar->getBoundingBox().getMidX();
-	float dist_x = mainChar->specialRadar->getBoundingBox().getMidX() - getPositionX();
+	float limit_x = mainChar->Radar.special->getBoundingBox().getMaxX() - mainChar->Radar.special->getBoundingBox().getMidX();
+	float dist_x = mainChar->Radar.special->getBoundingBox().getMidX() - getPositionX();
 
 	float special_factor = 1.0f - (dist_x * dist_x) / (limit_x * limit_x);
 
@@ -308,7 +332,7 @@ bool BlockUnit::isVisitable()
 
 bool BlockUnit::isSearchable(int chunk_id, const Point& pos)
 {
-	if (isAlive() && isVisitable()){
+	if (isAlive() && isVisitable()) {
 		return (fabsf(pos.getDistance(getPosition())) < getWidth()*1.1f);
 	}
 	return false;

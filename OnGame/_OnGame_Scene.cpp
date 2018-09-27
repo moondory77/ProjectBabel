@@ -6,7 +6,6 @@
 #include "base/CCEventDispatcher.h"
 #include "System/GameManager.h"
 #include "System/BGManager.h"
-//#include "System/PopUps.h"
 #include "VFX/EffectManager.h"
 
 #include "OnGame/Character.h"
@@ -14,9 +13,9 @@
 #include "_OnGame_Scene.h"
 
 USING_NS_CC;
-
-using namespace CocosDenshion;
 using namespace std;
+using namespace CocosDenshion;
+
 
 /** 남은 스페셜공격량을 저장하기 위한 변수 */
 float timer;
@@ -54,13 +53,15 @@ void OnGame::initJoyController()
 	fixedLayer->addChild(joyController);	
 
 }
+
 void OnGame::initCharacter() {
 	//initPos,  gravity,  jumpVelocity,  specialDamage
-	mainChar = new Character(Point(winSize().width / 2, land), 7.4f, 65.0f, 40);
-	movingLayer->addChild(mainChar, 3);
+	mainChar = new Character(Point(winSize().width / 2, land), 7.4f, 65.0f, 40);	
 	mainChar->setUICanvas(fixedLayer);
-}
 
+	movingLayer->addChild(mainChar, 3);
+	movingLayer->addChild(mainChar->Collider.body, 3);
+}
 
 void OnGame::initBG() {
 
@@ -90,9 +91,6 @@ void OnGame::initBG() {
 	sprLand_right->setPositionX(winSize().width / 4 * 3);
 	movingLayer->addChild(sprLand_right, 1);
 }
-
-
-
 void OnGame::initIcon() {
 
 	//설정 버튼(이것은 팝업 창을 띄우고 위치는 오른쪽 위로 잡음)
@@ -102,9 +100,6 @@ void OnGame::initIcon() {
 	popup_setting_icon->setPosition(Point(winSize().width - 20, winSize().height - 20));
 	fixedLayer->addChild(popup_setting_icon, 10, "setting");
 }
-
-
-
 void OnGame::initGauge() {
 	DefenseTime = 16.f;
 	NowDefenseGauge = 0.0;
@@ -133,8 +128,6 @@ void OnGame::initGauge() {
 	CCLOG("MaxGauge Size : %f", MaxGaugeSize);
 	//fixedLayer->addChild(GaugeDefense);
 }
-
-
 void OnGame::initCamera() {
 
 	cameraTarget = Sprite::create();
@@ -145,7 +138,6 @@ void OnGame::initCamera() {
 	followCenter = CustomFollow::create(cameraTarget, Rect::ZERO);
 	movingLayer->runAction(followCenter);
 }
-
 
 void OnGame::onExit() {
 
@@ -161,7 +153,6 @@ void OnGame::onExit() {
 	//TextureCache::getInstance()->removeUnusedTextures();
 	LayerColor::onExit();
 };
-
 
 
 //**************************OnGame씬 시작**********************************//
@@ -201,7 +192,6 @@ bool OnGame::init()
 	initJoyController();
 	initGauge();
 
-
 	initCamera();
 	building_num = 0;
 	this->addChild(movingLayer);
@@ -213,7 +203,6 @@ bool OnGame::init()
 	listener_OnGame->onTouchEnded = CC_CALLBACK_2(OnGame::onTouchEnded_OnGame, this);
 	Director::getInstance()->getEventDispatcher()->addEventListenerWithFixedPriority(listener_OnGame, 1);
 	this->setKeypadEnabled(true); //device의 home, back button enable 해줌.
-
 
 
 	obsBatchMgr = new ObsBatchManager();
@@ -278,15 +267,14 @@ bool OnGame::init()
 	return true;
 }
 
-
-
 //단위시간에 대한, onGame씬 전체 스케쥴 관리
 //매 frame 체크되어야 할 state는 모두 여기서 관리하도록
+
+
 void OnGame::MainScheduler(float deltaTime) {
 
 	//게임이 진행 중 일 때,
-	if (!mainChar->isDead()
-		&& !mainChar->getSpcIntroPlaying())
+	if (!mainChar->isDead() && !mainChar->getSpcIntroPlaying())
 	{
 
 		// 1 - 캐릭터 position 업데이트
@@ -332,23 +320,23 @@ void OnGame::gaugeUpdate(float deltaTime) {
 void OnGame::setCameraPosition() {
 
 	//y축 follow
-	if(mainChar->getSprPositionY() < winSize().height / 3)
+	if(mainChar->getPositionY() < winSize().height / 3)
 		cameraTarget->setPositionY(winSize().height / 2);
 	else
-		cameraTarget->setPositionY(mainChar->getSprPosition().y + winSize().height / 6);
+		cameraTarget->setPositionY(mainChar->getPosition().y + winSize().height / 6);
 
 
 	//x축 follow
-	if (mainChar->getSprPositionX() <= 0)
+	if (mainChar->getPositionX() <= 0)
 	{
 		cameraTarget->setPositionX(0);
 	}
-	else if (mainChar->getSprPositionX() >= winSize().width)
+	else if (mainChar->getPositionX() >= winSize().width)
 	{
 		cameraTarget->setPositionX(winSize().width);
 	}
 	else
-		cameraTarget->setPositionX(mainChar->getSprPositionX());
+		cameraTarget->setPositionX(mainChar->getPositionX());
 
 
 
@@ -359,7 +347,6 @@ void OnGame::setCameraPosition() {
 	//#####주석 취소
 	//GaugeDefense->setTextureRect(Rect(0.f, MaxGaugeSize - NowDefenseGauge, GaugeDefense->getContentSize().width, NowDefenseGauge));
 }
-
 
 
 //
@@ -373,7 +360,6 @@ void OnGame::setCameraPosition() {
 //	return temp > 1.3 && temp < 1.8;
 //}
 //
-
 
 
 //아이콘 클릭 받으면 Item.cpp로 넘어가기
@@ -462,12 +448,10 @@ bool OnGame::onTouchBegan_OnGame(Touch* touches, Event *unused_event) {
 
 	return true;
 }
-
 void OnGame::onTouchMoved_OnGame(Touch* touches, Event *unuesd_event)
 {
 	//Point touchPoint = touches->getLocation();
 };
-
 void OnGame::onTouchEnded_OnGame(Touch* touches, Event *unuesd_event) {
 
 	Point startPoint = touches->getStartLocation();
@@ -679,8 +663,6 @@ void OnGame::onTouchEnded_Setting(Touch* touch, Event *unused_event)
 
 
 
-
-
 void OnGame::DefenseCheck(float deltaTime) {
 	if (mainChar->isDefense()) {
 		if (NowDefenseGauge > 0.f)
@@ -703,8 +685,6 @@ void OnGame::DefenseCheck(float deltaTime) {
 			NowDefenseGauge = MaxGaugeSize;
 	}
 }
-
-
 
 void OnGame::onKeyReleased(EventKeyboard::KeyCode keyCode, Event *event) {
 	if (keyCode == EventKeyboard::KeyCode::KEY_ESCAPE || keyCode == EventKeyboard::KeyCode::KEY_BACKSPACE) {

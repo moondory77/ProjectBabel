@@ -65,7 +65,7 @@ void BuildContainer::initBlkFrames()
 		//해당 강도의 건물프레임 기준좌표 (좌측 상단)
 		auto unit_frame = texBatchUnit.texFrames.at(i);
 		Point datum_pos = Point(unit_frame->getRect().getMinX(), unit_frame->getRect().getMinY());
-	
+
 		for (int j = 0; j != numRow * numCol; j++)
 		{
 			//정해진 unit size에 맞게 텍스쳐로부터 이미지를 crop
@@ -89,8 +89,8 @@ void BuildContainer::buildBlocks(Point& init_pos)
 		int row_idx = get2DIndex(i).first;
 		int col_idx = get2DIndex(i).second;
 
-		blkArray[i].sprUnit = Sprite::create();	
-		
+		blkArray[i].sprUnit = Sprite::create();
+
 		//각 블럭 스프라이트를 정사각형으로 강제 조절
 		blkArray[i].sprUnit->setScaleX(unitScaleX);
 		blkArray[i].sprUnit->setScaleY(unitScaleX * cropBlkSize.width / cropBlkSize.height);
@@ -99,7 +99,7 @@ void BuildContainer::buildBlocks(Point& init_pos)
 		blkArray[i].sprUnit->setSpriteFrame(blkArray[i].sprUnitFrames.at(0));
 		blkArray[i].sprUnit->setAnchorPoint(Point(0, 1));
 		blkArray[i].sprUnit->setPosition(init_pos.x + unitLength * col_idx, init_pos.y - unitLength * row_idx);
-	
+
 		//Batch Element의 batch_node 아래로 unit sprite 삽입
 		texBatchUnit.batchNode->addChild(blkArray[i].sprUnit);	///해당 시점부터 렌더링
 
@@ -134,20 +134,10 @@ void BuildContainer::buildBlocks(Point& init_pos)
 
 
 
-
-void BuildContainer::dumpRemoveBuffer()
-{
-	for (auto iter = bufferRemove.begin(); iter != bufferRemove.end(); iter++)
-	{
-		blkArray[*iter].breakSelf();
-		blkArray[*iter].linkedUnit.clear();
-	}
-	bufferRemove.clear();
-}
 void BuildContainer::dumpCrashBuffer()
 {
 	mainChar.setColliderPosition(mainChar.getColliderPosition() + getCrashBounceVec());
-
+	mainChar.clearCollider();
 	if (!bufferCrashX.empty()) bufferCrashX.clear();
 	if (!bufferCrashY.empty()) bufferCrashY.clear();
 }
@@ -158,23 +148,45 @@ Vec2 BuildContainer::getCrashBounceVec()
 	float bounce_x = 0.0f;
 	float bounce_y = 0.0f;
 
-	//CCLOG("now crash buffer size is %d", bufferCrashed.size());
-	for (auto iter = bufferCrashX.begin(); iter != bufferCrashX.end(); iter++)
+	//Y축 bounce를 적용시킬 지 여부 판단
+	if (mainChar.Collider.isCrashed[0] || mainChar.Collider.isCrashed[2])
 	{
-		//더 변화량이 큰 x값 추출
-		if (fabsf(bounce_x) < fabsf(blkArray[*iter].getCrashVec().x))
-			bounce_x = blkArray[*iter].getCrashVec().x;
+		for (auto iter = bufferCrashY.begin(); iter != bufferCrashY.end(); iter++)
+		{
+			//가장 변화량이 큰 y값 추출
+			if (fabsf(bounce_y) < fabsf(blkArray[*iter].getCrashVec().y))
+				bounce_y = blkArray[*iter].getCrashVec().y;
+		}
+	}
+	
+	//X축 bounce를 적용시킬 지 여부 판단
+	if (mainChar.Collider.isCrashed[1] || mainChar.Collider.isCrashed[3])
+	{
+		for (auto iter = bufferCrashX.begin(); iter != bufferCrashX.end(); iter++)
+		{
+			//가장 변화량이 큰 x값 추출
+			if (fabsf(bounce_x) < fabsf(blkArray[*iter].getCrashVec().x))
+				bounce_x = blkArray[*iter].getCrashVec().x;
+		}
 	}
 
-	for (auto iter = bufferCrashY.begin(); iter != bufferCrashY.end(); iter++)
-	{
-		//더 변화량이 큰 y값 추출
-		if (fabsf(bounce_y) < fabsf(blkArray[*iter].getCrashVec().y))
-			bounce_y = blkArray[*iter].getCrashVec().y;
-	}
 	CCLOG("Bounce Vector (%.2f, %.2f)", bounce_x, bounce_y);
 	return Vec2(bounce_x, bounce_y);
 }
+
+
+void BuildContainer::dumpRemoveBuffer()
+{
+	for (auto iter = bufferRemove.begin(); iter != bufferRemove.end(); iter++)
+	{
+		blkArray[*iter].breakSelf();
+		blkArray[*iter].linkedUnit.clear();
+	}
+	bufferRemove.clear();
+}
+
+
+
 int BuildContainer::getNewChunkID()
 {
 	//chunk ID를 새로 부여함과 동시에, Block 포인터를 저장할 버퍼 생성
@@ -243,7 +255,7 @@ vector<int>& BuildContainer::breadthSearch(int chunk_id, vector<int>& main_stack
 				break;
 			}
 
-			for (auto iter = cursor.linkedUnit.begin(); iter != cursor.linkedUnit.end(); iter++){
+			for (auto iter = cursor.linkedUnit.begin(); iter != cursor.linkedUnit.end(); iter++) {
 				if ((*iter)->isSearchable(chunk_id, cursor.getPosition()))
 					bfsSubStack->push_back((*iter)->unitIdx);
 			}
