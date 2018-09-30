@@ -1,14 +1,15 @@
 #ifndef __CHARACTER_H__
 #define __CHARACTER_H__
+
 #include "cocos2d.h"
 #include "OnGame/CollisionDetector.h"
+#include "OnGame/CustomAction.h"
 
 #define MOTION_ACTION 1001
 #define	WEAPON_ROT(a) (a+90.0f)
 
 USING_NS_CC;
 using namespace std;
-
 
 //캐릭터 FSM의 Base State
 enum charStateType {
@@ -17,26 +18,6 @@ enum charStateType {
 	SPC_ATK = 13,
 	JUMP = 17, CRASH = 29,
 	DEAD = 31, PRESSED = 37
-};
-
-//Animation 형태의 Motion Action 
-enum charActionType {
-	actNone,
-
-	actJumpReady, actJumpCancel,
-	actJumpUp, actJumpDown,
-
-	actAtkLandReady, actAtkLandHit, actAtkLandBack, actAtkLandCancel,
-	actAtkJumpReady, actAtkJumpHit, actAtkJumpBack, actAtkJumpCancel,
-
-	actDefLand, actDefLandEnd,
-	actDefJump, actDefJumpEnd,
-
-	actSPCLand, actSPCLandEnd,
-	actSPCJump, actSPCJumpEnd,
-
-	actMoveLeft, actMoveLeftEnd,
-	actMoveRight, actMoveRightEnd
 };
 
 //MotionLock에 대한, 각 Atomic Action의 bit 위치
@@ -50,78 +31,159 @@ enum charMotionElement
 
 class Character : public Sprite
 {
+	//Animation 형태의 Motion Action 
+	enum charActionType {
+		actNone,
+
+		actJumpReady, actJumpCancel,
+		actJumpUp, actJumpDown,
+
+		actAtkLandReady, actAtkLandHit, actAtkLandBack, actAtkLandCancel,
+		actAtkJumpReady, actAtkJumpHit, actAtkJumpBack, actAtkJumpCancel,
+
+		actDefLand, actDefLandEnd,
+		actDefJump, actDefJumpEnd,
+
+		actSPCLand, actSPCLandEnd,
+		actSPCJump, actSPCJumpEnd,
+
+		actMoveLeft, actMoveLeftEnd,
+		actMoveRight, actMoveRightEnd
+	};
+
+	//** 충돌에 의한, 다수의 position 갱신을 optimizing 하기 위한 클래스
+	class BodyCollider : public LayerColor
+	{
+	private:
+		float bodyAngle;	//캐릭터 콜라이더(AABB)의 가로-세로 사잇각
+
+	public:
+		BodyCollider(float x_scale, float y_scale);
+		~BodyCollider() {};
+
+		bool isCrashed[4];	// top - right - bottom - left
+
+		float getBodyAngle() { return bodyAngle; }
+		inline void clearCollider() { for (int i = 0; i != 4; i++) { isCrashed[i] = false; } };
+		inline Size getSize() { return this->getBoundingBox().size; }
+		inline float getWidth() { return getSize().width; }
+		inline float getHeight() { return getSize().height; }
+
+		inline float getTopY() { return this->getBoundingBox().getMaxY(); }
+		inline float getMidY() { return this->getBoundingBox().getMidY(); }
+		inline float getBottomY() { return this->getBoundingBox().getMinY(); }
+		inline float getRightX() { return this->getBoundingBox().getMaxX(); }
+		inline float getMidX() { return this->getBoundingBox().getMidX(); }
+		inline float getLeftX() { return this->getBoundingBox().getMinX(); }
+
+		inline Vec2 getTopPostion() { return Point(getMidX(), getTopY()); }
+		inline Vec2 getRightPosition() { return Point(getRightX(), getMidY()); }
+		inline Vec2 getBottomPosition() { return Point(getMidX(), getBottomY()); }
+		inline Vec2 getLeftPosition() { return Point(getLeftX(), getMidY()); }
+		inline Vec2 getPosition() { return Point(getMidX(), getMidY()); }
+	};
+
+	class CharAtomicMotion : public Node
+	{
+	public:
+
+		CharAtomicMotion() {};
+		~CharAtomicMotion() {};
+
+		CustomSequence* bodyAction;
+		CustomSequence* circleAction;
+		CustomSequence* weaponAction;
+
+		//factor에 의해 진행속도 왜곡
+		inline void skewMotionSpeed(float skew_factor) {
+			if (0 < skew_factor && skew_factor <= 3.0f) {
+				bodyAction->setSkewFactor(skew_factor);
+				circleAction->setSkewFactor(skew_factor);
+				weaponAction->setSkewFactor(skew_factor);
+			}
+		};
+
+		inline void runMotion(Sprite& body, Sprite& circle, Sprite& weapon)
+		{
+			bodyAction->setTag(MOTION_ACTION);
+			circleAction->setTag(MOTION_ACTION);
+			weaponAction->setTag(MOTION_ACTION);
+			body.runAction(bodyAction);
+			circle.runAction(circleAction);
+			weapon.runAction(weaponAction);
+		};
+
+	};
+
+private:
+
 	CollisionDetector* weaponDetector;
-	SpriteBatchNode* batchNode;
 	Layer* UICanvas;
 
-	Point prevPos;				//(운동 추적 위한) (이전 프레임의) 위치
+	Point prevPos;				//(이전 프레임의) 위치 (운동 추적 위해..)
 	int stateStack;				//캐릭터의 상태 스택
 
-	///# 모든 Sprite의 Scale은, winSize의 width에 대한 비율을 기준으로 한다
-	float bodyScale;
+	float bodyScale;		///# 모든 Sprite의 Scale은, winSize의 width에 대한 비율을 기준으로 한다
 	float curAltitude;		//현재 지면 위치 (y축)
-
 
 	charActionType curCharAction;
 	Action* shakeCanvas;
 
+	unsigned char motionLockBit = 0;
+	bool isSpcIntroPlaying = false;
+
+	//구성액션 플래그들로부터 전체 모션 액션이 진행중인지를 판단해주는 플래그
+	bool isMotionPlaying = false;
+
+	/* 캐릭터 몸체를 구성하는 각 Sprite Part */
 	struct {
 		Sprite *Body;
 		Sprite *Circle;
 		Sprite *Weapon;
 	}BodyPart;
 
-	struct {	/* 인게임 내 각종 능력치 */
+	/* 인게임 내 각종 능력치 */
+	struct {
 		int powerSP;
 		int powerNormal;
 		float ceilingHeight;	///점프 상승 한계 height
 	}AbilityStatus;
 
-
-	struct {	/* 운동상태 변화에 영향을 미치는 value */
+	/* 운동상태 변화에 영향을 미치는 value */
+	struct {
 		float jumpVelo;				///점프 시작 속도  (y축)
 		float curVeloY;				///현재 속도(y축)
 		float outerVeloY;			///충돌 시, 외부로부터 받는 delta velocity (y축)
 		float curGravity;
 	}Momentum;
 
-
-	struct {	/* onGame에서 유동적으로 변하는 무기의 scale */
+	/* onGame에서 유동적으로 변하는 무기의 scale */
+	struct {
 		float min;
 		float max = 0.2f;
 		float cur;
 	}WeaponScale;
 
-
-	struct {	/* 1회 공격&방어 보장을 위한 유니크 아이디 */
+	/* 1회 공격&방어 보장을 위한 유니크 아이디 */
+	struct {
 		int attackID = 0;
 		int defenseID = 0;
 		int specialID = 0;
 	}CommandID;
 
-
-
-	struct {	/* 장착 weapon에 대해, 유효 타격 min~max 범위 */
+	/* 장착 weapon에 대해, 유효 타격 min~max 범위 */
+	struct {
 		float min;
 		float max;
 	}atkScopeRadius;
 
+	///유효 타격 각도 범위 -> 제거
 	struct {
 		float min = CC_DEGREES_TO_RADIANS(30.0f);
 		float max = CC_DEGREES_TO_RADIANS(180.0f);
 	}atkScopeAngle;
 
-
-
-	unsigned char motionLockBit = 0;
-
-	//구성액션 플래그들로부터 전체 모션 액션이 진행중인지를 판단해주는 플래그
-	bool isMotionPlaying = false;
-	bool isSpcIntroPlaying = false;	//스페셜 어택 모션 플레이 중 플래그
-
-
-
-	//Controller에서 들어오는 Input
+	//Controller로부터 들어오는 Input
 	map<charStateType, unsigned char> inputState = {
 		{ NONE , 0x00 },
 		{ MOVE, 0x00 },
@@ -131,115 +193,96 @@ class Character : public Sprite
 		{ DEAD , 0x00 }
 	};
 
+
 	//Circle Rot + Weapon Rot
 	map<charActionType, pair<float, float>> finishRotation = {
-		{ actNone			, { 28.0f, OnCircleRot(-80.0f)}},		//Default 상태의 circle, weapon 각도
+		{ actNone			,{ 28.0f, OnCircleRot(-80.0f) } },		//Default 상태의 circle, weapon 각도
 
-		{ actJumpReady		, { 40.0f, OnCircleRot(-96.0f) }},
-		{ actJumpUp			, { 48.0f, OnCircleRot(-74.0f) }},
-		{ actJumpDown		, { -28.0f, OnCircleRot(-30.0f)}},
+		{ actJumpReady		,{ 40.0f, OnCircleRot(-96.0f) } },
+		{ actJumpUp			,{ 48.0f, OnCircleRot(-74.0f) } },
+		{ actJumpDown		,{ -28.0f, OnCircleRot(-30.0f) } },
 
-		{ actAtkLandReady	, { -50.0f, OnCircleRot(-1.0f) }},
-		{ actAtkLandHit		, { -270.0f, OnCircleRot(104.0f) }},
-		{ actAtkJumpReady	, { -50.0f, OnCircleRot(-1.0f) }},
-		{ actAtkJumpHit		, { -270.0f, OnCircleRot(104.0f) }},
+		{ actAtkLandReady	,{ -50.0f, OnCircleRot(-1.0f) } },
+		{ actAtkLandHit		,{ -270.0f, OnCircleRot(104.0f) } },
+		{ actAtkJumpReady	,{ -50.0f, OnCircleRot(-1.0f) } },
+		{ actAtkJumpHit		,{ -270.0f, OnCircleRot(104.0f) } },
 
-		{ actDefLand		, { 35.0f, OnCircleRot(27.0f) }},
-		{ actDefJump		, { 53.0f, OnCircleRot(27.0f) }},
+		{ actDefLand		,{ 35.0f, OnCircleRot(27.0f) } },
+		{ actDefJump		,{ 53.0f, OnCircleRot(27.0f) } },
 
-		{ actMoveLeft		, { 28.0f, OnCircleRot(-74.0f) }},
-		{ actMoveRight		, { 160.0f, OnCircleRot(62.0f) }}
+		{ actMoveLeft		,{ 28.0f, OnCircleRot(-74.0f) } },
+		{ actMoveRight		,{ 160.0f, OnCircleRot(62.0f) } }
 	};
 
 	map<charActionType, Vector<SpriteFrame*>> motionFrames = {
-		{ actNone , {}},
-		{ actJumpReady ,{} },		{ actJumpCancel ,{} },
-		{ actJumpUp ,{} },			{ actJumpDown ,{} },
+		{ actNone ,{} },
+		{ actJumpReady ,{} },{ actJumpCancel ,{} },
+		{ actJumpUp ,{} },{ actJumpDown ,{} },
 
-		{ actAtkLandReady ,{} },	{ actAtkLandHit ,{} },
-		{ actAtkLandBack ,{} },		{ actAtkJumpReady ,{} },
-		{ actAtkJumpHit ,{} },		{ actAtkJumpBack ,{} },
+		{ actAtkLandReady ,{} },{ actAtkLandHit ,{} },
+		{ actAtkLandBack ,{} },{ actAtkJumpReady ,{} },
+		{ actAtkJumpHit ,{} },{ actAtkJumpBack ,{} },
 
-		{ actDefLand ,{} },			{ actDefLandEnd ,{} },
-		{ actDefJump ,{} },			{ actDefJumpEnd ,{} },
+		{ actDefLand ,{} },{ actDefLandEnd ,{} },
+		{ actDefJump ,{} },{ actDefJumpEnd ,{} },
 
-		{ actSPCLand ,{} },			{ actSPCLandEnd ,{} },
-		{ actSPCJump ,{} },			{ actSPCJumpEnd ,{} },
+		{ actSPCLand ,{} },{ actSPCLandEnd ,{} },
+		{ actSPCJump ,{} },{ actSPCJumpEnd ,{} },
 
-		{ actMoveLeft ,{} },		{ actMoveLeftEnd ,{} },
-		{ actMoveRight ,{} },		{ actMoveRightEnd ,{} },
+		{ actMoveLeft ,{} },{ actMoveLeftEnd ,{} },
+		{ actMoveRight ,{} },{ actMoveRightEnd ,{} },
 	};
 
 	map<charActionType, SpriteFrame*> finishFrame = {
 		{ actNone , NULL },
-		{ actAtkLandReady ,NULL }, { actAtkLandHit ,NULL },
-		{ actAtkJumpReady ,NULL }, { actAtkJumpHit ,NULL },
+		{ actAtkLandReady ,NULL },{ actAtkLandHit ,NULL },
+		{ actAtkJumpReady ,NULL },{ actAtkJumpHit ,NULL },
 
-		{ actJumpReady ,NULL },	{ actJumpUp ,NULL },
+		{ actJumpReady ,NULL },{ actJumpUp ,NULL },
 		{ actJumpDown ,NULL },
 
-		{ actDefLand ,NULL }, { actDefJump ,NULL },
-		{ actSPCLand ,NULL }, { actSPCJump ,NULL },
+		{ actDefLand ,NULL },{ actDefJump ,NULL },
+		{ actSPCLand ,NULL },{ actSPCJump ,NULL },
 
-		{ actMoveLeft ,NULL }, { actMoveRight ,NULL },
+		{ actMoveLeft ,NULL },{ actMoveRight ,NULL },
 	};
 
 	inline float OnCircleRot(float origin_wp_rot) { return origin_wp_rot + 90.0f; }
 
-public:
 
+
+public:
 
 	Character();
 	Character(Point initPos, float gravity, float jumpVelocity, int specialDamage);
 	~Character();
 
+	BodyCollider* bodyCollider;
 	float lapsedAtkTick;			//공격 애니메이션이 진행되는 시간 지표 (0 ~ 1 까지 변화)
 	int lapsedAtkScore;
 
-	struct {	/* rough 한 형태로 tracking을 위한 AABB 형태의 레이더  */
+	struct {	/* 사전 rough-tracking을 위한 AABB 형태의 레이더  */
 		Layer* attack;
 		Layer* special;
 		Layer* defense;
 	}Radar;
 
-	struct {
-		Layer* body;
-		bool isCrashed[4];	
-	}Collider;
+	void updatePosition(float deltaTime);
+	void updateState(float deltaTime);
+	void updateStateTransition();
 
-	inline void clearCollider() { for (int i = 0; i != 4; i++) { Collider.isCrashed[i] = false; } };
-
+	void addState(charStateType aState);
+	void delState(charStateType dState);
 
 	float curDefPoint = 0;		///현재 방어 게이지
 	float curSpecPoint = 0;		///현재 필살기 게이지
 	float maxDefPoint = 5000;
 	float maxSpecPoint;
 
-
-	void addState(charStateType aState);
-	void delState(charStateType dState);
-
-	void positionUpdate(float deltaTime);
-	void stateUpdate(float deltaTime);
-	void stateTransitionUpdate();
-
 	void setUICanvas(Layer* ui_canvas) { UICanvas = ui_canvas; };
 	Layer* getUICanvas() { return UICanvas; }
 
-	/* 캐릭터 모션/State 관련 함수 */
-	void initMotionFrames();							//캐릭터 액션 애니메이션에 필요한 프레임 삽입
-	void playCharAction(charActionType targetAction);	//charAction에 대해 Animation 액션을 실행
-	void setCharFrame(charActionType targetAction);		//charAction에 대해 Frame으로 교체 (각 Action이 끝났을 때)
-	void changeCharMotion(bool isAdd, charStateType targetState); //State의 Add/Delete 에 맞게, 모션(Animation/Frame) 교체(true - addState, false - delState)
-
-	//대상을 attack radar 체크해서 유효데미지 반환
-	int chkAttackRadar(Rect& attackable_unit);
-	int chkDefenseRadar(const Sprite& defensable_unit);
-
-
 	int getState() { return this->stateStack; };
-	void getMotionLock(charActionType input_action);
-	void releaseMotionLock(charActionType input_action, charMotionElement target);
 
 	bool getSpcIntroPlaying() { return isSpcIntroPlaying; }
 	void setSpcIntroPlaying(bool isSpcIntroPlaying) { this->isSpcIntroPlaying = isSpcIntroPlaying; }
@@ -247,45 +290,22 @@ public:
 	void setMotionPlaying(bool isMotionPlaying) { this->isMotionPlaying = isMotionPlaying; }
 
 
-	//void setPosition(Point newPos) { this->setPosition(newPos); };
-	//void setPositionX(float newX) { sprChar->setPositionX(newX); };
-	//void setPositionY(float newY) { sprChar->setPositionY(newY); };
+	/* 캐릭터 모션/State 관련 함수 */
+	void initMotionFrames();							//캐릭터 액션 애니메이션에 필요한 프레임 삽입
+	void playCharAction(charActionType targetAction);	//charAction에 대해 Animation 액션을 실행
+	void setCharFrame(charActionType targetAction);		//charAction에 대해 Frame으로 교체 (각 Action이 끝났을 때)
+	void changeCharMotion(bool isAdd, charStateType targetState); //State의 Add/Delete 에 맞게, 모션(Animation/Frame) 교체(true - addState, false - delState)
+																  //대상을 attack radar 체크해서 유효데미지 반환
+	int chkAttackRadar(Rect& attackable_unit);
+	int chkDefenseRadar(const Sprite& defensable_unit);
 
-	//Point getSprPosition() { return sprChar->getPosition(); }
-	//float getSprPositionX() { return sprChar->getPositionX(); }
-	//float getSprPositionY() { return sprChar->getPositionY(); }
+	void getMotionLock(charActionType input_action);
+	void releaseMotionLock(charActionType input_action, charMotionElement target);
 
-	////캐릭터 객체 전체를 이동
-	//void setPosition(Point newPos) { setSprPosition(newPos); setColliderPosition(newPos); };
-	//void setPositionX(float newX) { setSprPositionX(newX); setColliderPositionX(newX); };
-	//void setPositionY(float newY) { setSprPositionY(newY); setColliderPositionY(newY); };
-
-
-
-	//캐릭터 collider만 이동
-	void setColliderPosition(Point newPos) { Collider.body->setPosition(newPos); };
-	void setColliderPositionX(float newX) { Collider.body->setPositionX(newX); };
-	void setColliderPositionY(float newY) { Collider.body->setPositionY(newY); };
-
-	Point getColliderPosition() { return Collider.body->getPosition(); }
-	float getColliderPositionX() { return Collider.body->getPositionX(); }
-	float getColliderPositionY() { return Collider.body->getPositionY(); }
 
 
 	Point getPrevPos() { return this->prevPos; }
 	float getAltitude() { return this->curAltitude; }
-
-	inline float getTopY() { return Collider.body->getBoundingBox().getMaxY(); }
-	inline float getMidY() { return Collider.body->getBoundingBox().getMidY(); }
-	inline float getBottomY() { return Collider.body->getBoundingBox().getMinY(); }
-	inline float getRightX() { return Collider.body->getBoundingBox().getMaxX(); }
-	inline float getMidX() { return Collider.body->getBoundingBox().getMidX(); }
-	inline float getLeftX() { return Collider.body->getBoundingBox().getMinX(); }
-	
-	inline Point getTopPoint() { return Point(getMidX(), getTopY()); }
-	inline Point getRightPoint() { return Point(getRightX(), getMidY()); }
-	inline Point getBottomPoint() { return Point(getMidX(), getBottomY()); }
-	inline Point getLeftPoint() { return Point(getLeftX(), getMidY()); }
 
 
 	float getLimitHeight() { return this->AbilityStatus.ceilingHeight; }
@@ -298,19 +318,16 @@ public:
 
 
 
-	Size getColliderSize() { return Collider.body->getBoundingBox().size; }
-	float getColliderWidth() { return getColliderSize().width; }
-	float getColliderHeight() { return getColliderSize().height; }
-
-	Size getWpSize() { return BodyPart.Weapon ->getBoundingBox().size; }	
+	Size getWpSize() { return BodyPart.Weapon->getBoundingBox().size; }
 	float getWpWidth() { return getWpSize().width; };
 	float getWpHeight() { return getWpSize().height; }
 
 	float getWpLengthScale() {
-		return WeaponScale.cur / BodyPart.Weapon->getContentSize().width * BodyPart.Weapon->getContentSize().height; 
+		return WeaponScale.cur / BodyPart.Weapon->getContentSize().width * BodyPart.Weapon->getContentSize().height;
 	}
 	float getWpScale() { return WeaponScale.cur; }
 	//float getDefWpScale() { return defWpScale; }
+
 	//float getMaxWpScale() { return maxWpScale; }
 
 	void setWpScale(float wp_scale);
@@ -431,7 +448,6 @@ public:
 
 		return (input == trigger);						//input 비트와 trigger 비트 동일 여부
 	};
-
 	//input - trigger dirty 여부 반환
 	inline bool getDirtyInputTrigger(charStateType state, bool input_or_trigger) {
 		unsigned char state_bit = inputState[state];
@@ -445,6 +461,9 @@ public:
 		}
 	};
 
+
 };
+
+
 
 #endif
