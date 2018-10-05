@@ -3,65 +3,19 @@
 #define DEFAULT_PARTICLE_NUM 40
 
 
-//랩핑한 ParticleSystem 클래스의 create 함수 오버라이드
-ParticleCustomUnit* ParticleCustomUnit::create(ParticlePool& my_pool, int unit_idx, const string& plist_name)
+ParticlePool::ParticlePool(ParticleType p_type, Texture2D& p_tex, string tex_name, int sort_num)
+	: type(p_type), texture(p_tex), texName(tex_name), sortNum(sort_num)
 {
-	ParticleCustomUnit* ret = new (nothrow)ParticleCustomUnit(my_pool, unit_idx);
-
-	/* 파티클 plist로부터 init하면서, 여기에서 texture 정보도 캐쉬에 로드됨. 하지면 현재 설계 상
-	오브젝트 생성 후, 따로 각 파티클에 다시 텍스쳐를 입히기에, 여기서 로드된 texture 캐쉬는 더미(용량 차지 안함)*/
-	if (ret && ret->initWithFile(plist_name))
-	{
-		return ret;	//auto-release를 빼고 리턴
-	}
-	CC_SAFE_DELETE(ret);
-	return ret;
-}
-
-void ParticleCustomUnit::update(float deltaTime)
-{
-	super::update(deltaTime);	//기존 particleSystem의 update 처리
-	if (!_isActive && isRunning)
-	{
-		if (_particleCount == 0) {
-			isRunning = false;
-			container.pushToAvailableStack(this->unitIdx);
-		}
-	}
-}
-
-
-ParticlePool::ParticlePool(Texture2D& tex_in_cache, ParticleType p_type, string tex_name, int elem_sort, int default_size)
-	: type(p_type), texName(tex_name), elementNum(elem_sort), minSize(default_size)
-{
-	batchNode = ParticleBatchNode::createWithTexture(&tex_in_cache);
+	batchNode = ParticleBatchNode::createWithTexture(&texture);
 
 	int i = 0;
-	SpriteFrame* p_frame = SpriteFrameCache::getInstance()->getSpriteFrameByName(StringUtils::format("Frame_%d_Particle_%d.png", i, (int)type));
-
-	if (p_frame == NULL) {
-		SpriteFrameCache::getInstance()->addSpriteFramesWithFile("ruins/" + texName + ".plist", &tex_in_cache);
-		p_frame = SpriteFrameCache::getInstance()->getSpriteFrameByName(StringUtils::format("Frame_%d_Particle_%d.png", i, (int)type));
-	}
-	frames.pushBack(p_frame);
-
-	while (++i < this->elementNum) {
-		p_frame = SpriteFrameCache::getInstance()->getSpriteFrameByName(StringUtils::format("Frame_%d_Particle_%d.png", i, (int)type));
-		frames.pushBack(p_frame);
-	}
+	protoType = new ParticleCustom*[sortNum];	//프로토타입 저장 배열 할당
 
 	///##movingLayer가 아닌, onGame Scene의 child로 해야 정확한 고정위치에서 파티클효과가 나타난다
-	//최소사이즈만큼 pool을 셋팅
-	unitPool.reserve(minSize);
-	availableStack.resize(minSize);
-
 	cursor = 0;
-	maxSize = MAX_PARTICLE_NUM;
-
-	//default 갯수만큼 push
-	for (int i = 0; i < default_size; i++)
-		pushParticle();
 };
+
+
 ParticlePool::~ParticlePool()
 {
 	for (int i = 0; i < unitPool.size(); i++)
@@ -75,33 +29,63 @@ ParticlePool::~ParticlePool()
 };
 
 
-void ParticlePool::pushParticle()
+
+//구성 파티클 원형을 pool에 장착
+void ParticlePool::setProtoType(initializer_list<ParticleCustom*> targets)
 {
-	if (getCurSize() < maxSize)
-	{
-		//파티클 오브젝트 생성 (plist from -> ParticleDesigner)
-		ParticleCustomUnit* new_ruin 
-			= ParticleCustomUnit::create(*this, unitPool.size(), StringUtils::format("ruins/Particle_Unit_%d.plist", unitPool.size() % 3));
+	auto iter = targets.begin();
+	for (int i = 0; i < sortNum; i++, iter++) {
+		protoType[i] = *iter;
 
-		if (new_ruin)
-		{
-			//배치노드로부터, 필요한 frame 입힘
-			new_ruin->setTextureWithRect(batchNode->getTexture(), frames.at(unitPool.size() % 3)->getRectInPixels());
-			new_ruin->setAnchorPoint(Vec2(0.5f, 0.5f));
-			new_ruin->setScale(0.1f);
-			new_ruin->setDuration(0.7f);
-
-			batchNode->addChild(new_ruin);
-			new_ruin->stopSystem();
-			unitPool.push_back(new_ruin);
-
-			pushToAvailableStack(new_ruin->unitIdx);
+		//텍스쳐로부터, 해당 파티클에 입혀야 할 텍스쳐를 골라 frame 저장
+		SpriteFrame* p_frame = SpriteFrameCache::getInstance()->getSpriteFrameByName(StringUtils::format("SubType_%d_Particle_%d.png", i, (int)type));
+		if (p_frame == NULL) {
+			SpriteFrameCache::getInstance()->addSpriteFramesWithFile("Particles/" + texName + ".plist", &texture);
+			p_frame = SpriteFrameCache::getInstance()->getSpriteFrameByName(StringUtils::format("SubType_%d_Particle_%d.png", i, (int)type));
 		}
+		frames.pushBack(p_frame);
+	}
+};
+
+
+void ParticlePool::initPool(int min_size, int max_size)
+{
+	PoolSize.min = min_size;
+	PoolSize.max = max_size;
+	PoolSize.cur = 0;
+
+	unitPool.reserve(PoolSize.min);
+	availableStack.reserve(PoolSize.min);
+
+	for (int i = 0; i < PoolSize.min; i++)
+		pushParticle(PoolSize.cur % sortNum);
+}
+
+
+void ParticlePool::pushParticle(int sort)
+{
+	if (PoolSize.cur < PoolSize.max)
+	{
+		auto new_ruin = protoType[sort]->spawnChild(PoolSize.cur++);	//현재 pool 사이즈를 id로 해서 삽입	
+		assert(new_ruin != NULL);
+
+		//배치노드로부터, 필요한 frame 입힘
+		new_ruin->setTextureWithRect(&texture, frames.at(sort)->getRectInPixels());
+		new_ruin->setAnchorPoint(Vec2(0.5f, 0.5f));
+		new_ruin->setScale(0.1f);
+		new_ruin->setDuration(0.7f);
+
+		batchNode->addChild(new_ruin);
+		new_ruin->stopSystem();
+		unitPool.push_back(new_ruin);
+		pushToAvailableStack(new_ruin->getID());
 	}
 }
+
+
 void ParticlePool::popParticle()
 {
-	if (unitPool.size() > 0){
+	if (unitPool.size() > 0) {
 		unitPool.back()->removeFromParent();
 		unitPool.back()->release();
 		unitPool.pop_back();
@@ -119,6 +103,8 @@ void ParticlePool::pushToAvailableStack(int unit_idx)
 	}
 	cursor++;
 }
+
+
 void ParticlePool::playParticleEffect(Point& world_pos)
 {
 	if (cursor > 0)
@@ -129,15 +115,14 @@ void ParticlePool::playParticleEffect(Point& world_pos)
 
 		unitPool[available_idx]->setPosition(world_pos);
 		unitPool[available_idx]->resetSystem();
-		unitPool[available_idx]->isRunning = true;
+		//unitPool[available_idx]->isRunning = true;
 		//CCLOG("now available particle is (%d / %d)", cursor, unitPool.size());
 	}
-	else if (getCurSize() < maxSize)
+	else if (getCurSize() < PoolSize.max)
 	{
-		pushParticle();
+		pushParticle(PoolSize.cur % sortNum);
 		playParticleEffect(world_pos);
 	}
-
 	///여기서 잉여 파티클이 너무 많은 상황에, 정리 메커니즘 삽입 필요할듯
 };
 

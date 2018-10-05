@@ -14,21 +14,23 @@ class ParticleManager : public CCNode
 private:
 	static bool isExist;
 	TextureBatcher* texPool;
-	
-public:
-	map<ParticleType, ParticlePool*> PoolTable = {};
 
-	void initPool(ParticleType p_type, const char* tex_name, int elem_num, int default_size);
+public:
+	map<ParticleType, ParticlePool*> PoolTable = {};	//각 타입 별, pool은 단 하나만 존재
+
+	void createPool(ParticleType p_type, const char* tex_name, int sort_num);
 	void removePool(ParticleType p_type);
 
-	ParticleManager(){
+
+
+	ParticleManager() {
 		assert(!isExist);
 		texPool = new TextureBatcher();
 		isExist = true;
 	}
 
-	~ParticleManager(){
-		while (!PoolTable.empty()){
+	~ParticleManager() {
+		while (!PoolTable.empty()) {
 			removePool(PoolTable.begin()->first);
 		}
 		texPool->release();
