@@ -11,8 +11,10 @@
 USING_NS_CC;
 using namespace std;
 
+
 //캐릭터 FSM의 Base State
-enum charStateType {
+enum CharStateType
+{
 	NONE = 1, MOVE = 2,
 	ATTACK = 7, DEFENSE = 11,
 	SPC_ATK = 13,
@@ -20,19 +22,19 @@ enum charStateType {
 	DEAD = 31, PRESSED = 37
 };
 
-//MotionLock에 대한, 각 Atomic Action의 bit 위치
-enum charMotionElement
-{
-	BODY = 0x01,
-	CIRCLE = 0x02,
-	WEAPON = 0x04,
-};
-
 
 class Character : public Sprite
 {
+	//MotionLock에 대한, 각 Atomic Action의 bit 위치
+	enum MotionElement
+	{
+		BODY = 0x01,
+		CIRCLE = 0x02,
+		WEAPON = 0x04,
+	};
+
 	//Animation 형태의 Motion Action 
-	enum charActionType {
+	enum MotionActionType {
 		actNone,
 
 		actJumpReady, actJumpCancel,
@@ -50,6 +52,7 @@ class Character : public Sprite
 		actMoveLeft, actMoveLeftEnd,
 		actMoveRight, actMoveRightEnd
 	};
+
 
 	//** 충돌에 의한, 다수의 position 갱신을 optimizing 하기 위한 클래스
 	class BodyCollider : public LayerColor
@@ -83,64 +86,80 @@ class Character : public Sprite
 		inline Vec2 getPosition() { return Point(getMidX(), getMidY()); }
 	};
 
-	class CharAtomicMotion : public Node
+	//** 캐릭터 모션을 형성하는 3가지 (atomic action)을 하나로 바인딩
+	class AtomicMotionAction : public Node
 	{
+	private:
+		Character* Host;	//외부클래스의 비정적 멤버참조를 위해
+
 	public:
+		AtomicMotionAction() {};
+		~AtomicMotionAction() {};
 
-		CharAtomicMotion() {};
-		~CharAtomicMotion() {};
+		CustomSequence* actionBody;
+		CustomSequence* actionCircle;
+		CustomSequence* actionWeapon;
 
-		CustomSequence* bodyAction;
-		CustomSequence* circleAction;
-		CustomSequence* weaponAction;
+		MotionActionType curMotion;
+		unsigned char motionLockBit = 0;
+		bool isMotionPlaying = false;		//전체 모션액션 진행 플래그
+
+		void setHost(Character* host) { Host = host; };
+		Character* getHost() { return this->Host; };
+
+		void getMotionLock(MotionActionType input_action);
+		void releaseMotionLock(MotionActionType input_action, MotionElement target);
 
 		//factor에 의해 진행속도 왜곡
-		inline void skewMotionSpeed(float skew_factor) {
-			if (0 < skew_factor && skew_factor <= 3.0f) {
-				bodyAction->setSkewFactor(skew_factor);
-				circleAction->setSkewFactor(skew_factor);
-				weaponAction->setSkewFactor(skew_factor);
-			}
-		};
-
-		inline void runMotion(Sprite& body, Sprite& circle, Sprite& weapon)
+		inline void skewMotionSpeed(float skew_factor)
 		{
-			bodyAction->setTag(MOTION_ACTION);
-			circleAction->setTag(MOTION_ACTION);
-			weaponAction->setTag(MOTION_ACTION);
-			body.runAction(bodyAction);
-			circle.runAction(circleAction);
-			weapon.runAction(weaponAction);
+			if (skew_factor < 0.05f) skew_factor = 0.05f;
+			if (skew_factor > 3.0f) skew_factor = 3.0f;
+
+			CCLOG("skew factor is %.3f", skew_factor);
+
+			actionBody->setSkewFactor(skew_factor);
+			actionCircle->setSkewFactor(skew_factor);
+			actionWeapon->setSkewFactor(skew_factor);
 		};
 
+		//sprite에 setting된 모션 액션을 play
+		inline void runMotion(Sprite& body, Sprite& circle, Sprite& weapon) {
+			actionBody->setTag(MOTION_ACTION);
+			actionCircle->setTag(MOTION_ACTION);
+			actionWeapon->setTag(MOTION_ACTION);
+
+			body.runAction(actionBody);
+			circle.runAction(actionCircle);
+			weapon.runAction(actionWeapon);
+		};
 	};
+
 
 private:
 
-	CollisionDetector* weaponDetector;
 	Layer* UICanvas;
-
 	Point prevPos;				//(이전 프레임의) 위치 (운동 추적 위해..)
+
 	int stateStack;				//캐릭터의 상태 스택
 
-	float bodyScale;		///# 모든 Sprite의 Scale은, winSize의 width에 대한 비율을 기준으로 한다
-	float curAltitude;		//현재 지면 위치 (y축)
-
-	charActionType curCharAction;
+	float bodyScale;			///# 모든 Sprite의 Scale은, winSize의 width에 대한 비율을 기준으로 한다
+	float curAltitude;			//현재 지면 위치 (y축)
 	Action* shakeCanvas;
 
-	unsigned char motionLockBit = 0;
 	bool isSpcIntroPlaying = false;
+	AtomicMotionAction motionAction;
+	CollisionDetector* weaponDetector;
 
-	//구성액션 플래그들로부터 전체 모션 액션이 진행중인지를 판단해주는 플래그
-	bool isMotionPlaying = false;
 
 	/* 캐릭터 몸체를 구성하는 각 Sprite Part */
 	struct {
 		Sprite *Body;
 		Sprite *Circle;
-		Sprite *Weapon;
+		Sprite *WpHandle;
+		Sprite *WpBlade;
 	}BodyPart;
+
 
 	/* 인게임 내 각종 능력치 */
 	struct {
@@ -175,16 +194,26 @@ private:
 	struct {
 		float min;
 		float max;
+		//float extraAngle = 0.0f;
 	}atkScopeRadius;
 
-	///유효 타격 각도 범위 -> 제거
+
 	struct {
-		float min = CC_DEGREES_TO_RADIANS(30.0f);
-		float max = CC_DEGREES_TO_RADIANS(180.0f);
-	}atkScopeAngle;
+		float limitAngle = 5.0f;
+		float curAngle = 0;
+	}ExtraCircleRot;
+
+	struct {
+		float limitAngle = 9.0f;
+		float curAngle = 0;
+	}ExtraWeaponRot;
+
+
+	inline float OnCircleRot(float origin_wp_rot) { return origin_wp_rot + 90.0f; }
 
 	//Controller로부터 들어오는 Input
-	map<charStateType, unsigned char> inputState = {
+	map<CharStateType, unsigned char> inputState =
+	{
 		{ NONE , 0x00 },
 		{ MOVE, 0x00 },
 		{ ATTACK , 0x00 },{ DEFENSE , 0x00 },
@@ -193,11 +222,10 @@ private:
 		{ DEAD , 0x00 }
 	};
 
-
 	//Circle Rot + Weapon Rot
-	map<charActionType, pair<float, float>> finishRotation = {
-		{ actNone			,{ 28.0f, OnCircleRot(-80.0f) } },		//Default 상태의 circle, weapon 각도
-
+	map<MotionActionType, pair<float, float>> finishRotation =
+	{
+		{ actNone			,{ 28.0f, OnCircleRot(-80.0f) } },
 		{ actJumpReady		,{ 40.0f, OnCircleRot(-96.0f) } },
 		{ actJumpUp			,{ 48.0f, OnCircleRot(-74.0f) } },
 		{ actJumpDown		,{ -28.0f, OnCircleRot(-30.0f) } },
@@ -214,7 +242,7 @@ private:
 		{ actMoveRight		,{ 160.0f, OnCircleRot(62.0f) } }
 	};
 
-	map<charActionType, Vector<SpriteFrame*>> motionFrames = {
+	map<MotionActionType, Vector<SpriteFrame*>> motionFrames = {
 		{ actNone ,{} },
 		{ actJumpReady ,{} },{ actJumpCancel ,{} },
 		{ actJumpUp ,{} },{ actJumpDown ,{} },
@@ -233,7 +261,7 @@ private:
 		{ actMoveRight ,{} },{ actMoveRightEnd ,{} },
 	};
 
-	map<charActionType, SpriteFrame*> finishFrame = {
+	map<MotionActionType, SpriteFrame*> finishFrame = {
 		{ actNone , NULL },
 		{ actAtkLandReady ,NULL },{ actAtkLandHit ,NULL },
 		{ actAtkJumpReady ,NULL },{ actAtkJumpHit ,NULL },
@@ -247,9 +275,6 @@ private:
 		{ actMoveLeft ,NULL },{ actMoveRight ,NULL },
 	};
 
-	inline float OnCircleRot(float origin_wp_rot) { return origin_wp_rot + 90.0f; }
-
-
 
 public:
 
@@ -257,56 +282,54 @@ public:
 	Character(Point initPos, float gravity, float jumpVelocity, int specialDamage);
 	~Character();
 
-	BodyCollider* bodyCollider;
-	float lapsedAtkTick;			//공격 애니메이션이 진행되는 시간 지표 (0 ~ 1 까지 변화)
-	int lapsedAtkScore;
-
 	struct {	/* 사전 rough-tracking을 위한 AABB 형태의 레이더  */
 		Layer* attack;
 		Layer* special;
 		Layer* defense;
 	}Radar;
 
-	void updatePosition(float deltaTime);
-	void updateState(float deltaTime);
-	void updateStateTransition();
+	BodyCollider* bodyCollider;
 
-	void addState(charStateType aState);
-	void delState(charStateType dState);
+
+	float lapsedTimeHit = 0;	//Hit 액션의 시간지표(0 ~ 1 까지 변화) 
+	int lapsedDamageHit = 0;
+	int tickDamageHit = 0;
+
+
 
 	float curDefPoint = 0;		///현재 방어 게이지
 	float curSpecPoint = 0;		///현재 필살기 게이지
 	float maxDefPoint = 5000;
 	float maxSpecPoint;
 
+
+	void updatePosition(float deltaTime);
+	void updateState(float deltaTime);
+	void updateStateTransition();
+
+	void addState(CharStateType aState);
+	void delState(CharStateType dState);
+
+	int getState() { return this->stateStack; };
+	bool getSpcIntroPlaying() { return isSpcIntroPlaying; }
+	void setSpcIntroPlaying(bool isSpcIntroPlaying) { this->isSpcIntroPlaying = isSpcIntroPlaying; }
+	bool getMotionPlaying() { return motionAction.isMotionPlaying; }
+	void setMotionPlaying(bool isMotionPlaying) { motionAction.isMotionPlaying = isMotionPlaying; }
+
 	void setUICanvas(Layer* ui_canvas) { UICanvas = ui_canvas; };
 	Layer* getUICanvas() { return UICanvas; }
 
-	int getState() { return this->stateStack; };
-
-	bool getSpcIntroPlaying() { return isSpcIntroPlaying; }
-	void setSpcIntroPlaying(bool isSpcIntroPlaying) { this->isSpcIntroPlaying = isSpcIntroPlaying; }
-	bool getMotionPlaying() { return isMotionPlaying; }
-	void setMotionPlaying(bool isMotionPlaying) { this->isMotionPlaying = isMotionPlaying; }
-
-
 	/* 캐릭터 모션/State 관련 함수 */
-	void initMotionFrames();							//캐릭터 액션 애니메이션에 필요한 프레임 삽입
-	void playCharAction(charActionType targetAction);	//charAction에 대해 Animation 액션을 실행
-	void setCharFrame(charActionType targetAction);		//charAction에 대해 Frame으로 교체 (각 Action이 끝났을 때)
-	void changeCharMotion(bool isAdd, charStateType targetState); //State의 Add/Delete 에 맞게, 모션(Animation/Frame) 교체(true - addState, false - delState)
-																  //대상을 attack radar 체크해서 유효데미지 반환
+	void initMotionFrames();							//캐릭터 액션 애니메이션에 필요한 프레임 삽입	
+	void changeCharMotion(bool isAdd, CharStateType targetState); //State의 Add/Delete 에 맞게, 모션(Animation/Frame) 교체(true - addState, false - delState)	
+	void runMotionAction(MotionActionType targetAction);	//charAction에 대해 Animation 액션을 실행
+	void setMotionFrame(MotionActionType targetAction);		//charAction에 대해 Frame으로 교체 (각 Action이 끝났을 때)
+
 	int chkAttackRadar(Rect& attackable_unit);
 	int chkDefenseRadar(const Sprite& defensable_unit);
 
-	void getMotionLock(charActionType input_action);
-	void releaseMotionLock(charActionType input_action, charMotionElement target);
-
-
-
 	Point getPrevPos() { return this->prevPos; }
 	float getAltitude() { return this->curAltitude; }
-
 
 	float getLimitHeight() { return this->AbilityStatus.ceilingHeight; }
 	float getJumpVelo() { return this->Momentum.jumpVelo; }
@@ -316,24 +339,20 @@ public:
 	void setVeloY(float v) { this->Momentum.curVeloY = v; }
 	void setOuterVeloY(float v) { this->Momentum.outerVeloY = v; };
 
-
-
-	Size getWpSize() { return BodyPart.Weapon->getBoundingBox().size; }
-	float getWpWidth() { return getWpSize().width; };
-	float getWpHeight() { return getWpSize().height; }
+	Size getWpSize() { return BodyPart.WpBlade->getBoundingBox().size; }
+	float getWpWidth() { return getWpSize().width * BodyPart.WpHandle->getScale(); };
+	float getWpHeight() { return getWpSize().height * BodyPart.WpHandle->getScale(); };
 
 	float getWpLengthScale() {
-		return WeaponScale.cur / BodyPart.Weapon->getContentSize().width * BodyPart.Weapon->getContentSize().height;
+		return WeaponScale.cur / BodyPart.WpBlade->getContentSize().width * BodyPart.WpBlade->getContentSize().height;
 	}
+
 	float getWpScale() { return WeaponScale.cur; }
 	//float getDefWpScale() { return defWpScale; }
-
 	//float getMaxWpScale() { return maxWpScale; }
 
 	void setWpScale(float wp_scale);
 	float getBodyScale() { return bodyScale; }
-
-
 
 
 	//공격, 방어 공격 횟수 체크를 위한 ID 함수
@@ -342,7 +361,7 @@ public:
 			CommandID.attackID = 0;
 		else
 			CommandID.attackID++;
-		CCLOG("attack ID is %d", CommandID.attackID);
+		//CCLOG("attack ID is %d", CommandID.attackID);
 	}
 	void updateDefenseID() {
 		if (CommandID.defenseID > 5)
@@ -355,7 +374,7 @@ public:
 		//	specialID = 0;
 		//else
 		CommandID.specialID++;
-		CCLOG("Special Id updated!! : %d", CommandID.specialID);
+		//CCLOG("Special Id updated!! : %d", CommandID.specialID);
 	}
 
 	int getSpecialID() { return CommandID.specialID; }
@@ -390,7 +409,7 @@ public:
 	//bool isMove() ;
 
 
-	void callback_tick_AtkScore(float deltaTime);	//Hit액션 중, delta-time에 따른 공격범위 변화 스케쥴
+	void callback_tick_Hit(float deltaTime);	//Hit액션 중, delta-time에 따른 공격범위 변화 스케쥴
 	void callback_tick_AtkCharge(float deltaTime);
 	void callback_tick_AtkRelease(float deltaTime);
 	//void callback_tick_AtkConsume(float deltaTime);
@@ -401,46 +420,46 @@ public:
 	//void callback_DelPress(Ref* sender);
 
 	//State Bit 전체 초기화
-	inline void initStateBit(charStateType state) {
+	inline void initStateBit(CharStateType state) {
 		this->inputState[state] = 0x00;
 	};
 	//State Bit(0 ~ 7 bit) n번째 비트를 set on 
-	inline void setOnStateBit(charStateType state, unsigned char target_bit) {
+	inline void setOnStateBit(CharStateType state, unsigned char target_bit) {
 		inputState[state] |= (0x01 << target_bit);
 	};
 	//State Bit(0 ~ 7 bit) n번째 비트를 set off
-	inline void setOffStateBit(charStateType state, unsigned char target_bit) {
+	inline void setOffStateBit(CharStateType state, unsigned char target_bit) {
 		inputState[state] &= ~(0x01 << target_bit);
 	}
 	//State Bit(0 ~ 7 bit) n번째 비트 on/off 여부 반환 
-	inline bool getOnStateBit(charStateType state, unsigned char target_bit) {
+	inline bool getOnStateBit(CharStateType state, unsigned char target_bit) {
 		return inputState[state] & (0x01 << target_bit);
 	}
 
 	//input bit(4 bit)에 대한 on/off 
-	inline void setOnStateInput(charStateType state, unsigned char target_bit) {
+	inline void setOnStateInput(CharStateType state, unsigned char target_bit) {
 		setOnStateBit(state, target_bit % 4);
 	}
-	inline void setOffStateInput(charStateType state, unsigned char target_bit) {
+	inline void setOffStateInput(CharStateType state, unsigned char target_bit) {
 		setOffStateBit(state, target_bit % 4);
 	}
-	inline bool getOnStateInput(charStateType state, unsigned char target_bit) {
+	inline bool getOnStateInput(CharStateType state, unsigned char target_bit) {
 		return getOnStateBit(state, target_bit % 4);
 	}
 
 	//trigger(4 bit)에 대한 on/off
-	inline void setOnStateTrigger(charStateType state, unsigned char target_bit) {
+	inline void setOnStateTrigger(CharStateType state, unsigned char target_bit) {
 		setOnStateBit(state, (target_bit % 4) + 4);
 	};
-	inline void setOffStateTrigger(charStateType state, unsigned char target_bit) {
+	inline void setOffStateTrigger(CharStateType state, unsigned char target_bit) {
 		setOffStateBit(state, (target_bit % 4) + 4);
 	};
-	inline bool getOnStateTrigger(charStateType state, unsigned char target_bit) {
+	inline bool getOnStateTrigger(CharStateType state, unsigned char target_bit) {
 		return getOnStateBit(state, (target_bit % 4) + 4);
 	}
 
 	//input - trigger 비교 반환
-	inline bool getEqualInputTrigger(charStateType state) {
+	inline bool getEqualInputTrigger(CharStateType state) {
 
 		unsigned char state_bit = inputState[state];
 		unsigned char input = state_bit << 4;
@@ -449,7 +468,7 @@ public:
 		return (input == trigger);						//input 비트와 trigger 비트 동일 여부
 	};
 	//input - trigger dirty 여부 반환
-	inline bool getDirtyInputTrigger(charStateType state, bool input_or_trigger) {
+	inline bool getDirtyInputTrigger(CharStateType state, bool input_or_trigger) {
 		unsigned char state_bit = inputState[state];
 		if (input_or_trigger) {
 			unsigned char input = state_bit << 4;
@@ -460,7 +479,6 @@ public:
 			return trigger != 0x00;
 		}
 	};
-
 
 };
 
