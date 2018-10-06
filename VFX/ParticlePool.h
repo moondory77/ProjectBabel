@@ -10,17 +10,16 @@ using namespace std;
 class ParticlePool : public CCNode
 {
 private:
-	const ParticleType type;
 	const int sortNum;		//pool에 들어가는 파티클(plist) 종류	
 	const string texName;	//(texture 주소 참조를 위한) texture 파일명  
 	Texture2D& texture;
-	Vector<SpriteFrame*> frames = {};	//파티클 texture에 대한 사용 frame 개별저장
+
+	Vector<SpriteFrame*> frames = {};	//해당 Pool에 이용되는 종류별 파티클 프레임 저장
 
 	struct {
 		int min;
 		int max;
 		int cur;
-		//const int minSize;		//pool에 존재하는 최소 파티클
 	}PoolSize;
 
 
@@ -33,20 +32,20 @@ private:
 
 
 public:
+	const ParticleType type;
 
 
 	ParticlePool(ParticleType p_type, Texture2D& p_tex, string tex_name, int sort_num);
 	~ParticlePool();
 
 	const string getTexName() { return texName; }
+	Texture2D& getTexture() { return texture; }
 	ParticleBatchNode* getBatchNode() { return batchNode; }
+
 
 	//구성 파티클 원형을 pool에 장착
 	void setProtoType(initializer_list<ParticleCustom*> targets);
-	void initPool(int min_size, int max_size);
-
-
-	void pushParticle(int sort_idx);
+	void runSpawning(int min_size, int max_size);
 
 
 	int getMinSize() { return PoolSize.min; }
@@ -57,6 +56,8 @@ public:
 	}
 
 	void pushToAvailableStack(int unit_idx);
+
+	void pushParticle(int sort_idx);
 	void popParticle();
 
 	void playParticleEffect(Point& world_pos);

@@ -22,7 +22,6 @@ public:
 	void removePool(ParticleType p_type);
 
 
-
 	ParticleManager() {
 		assert(!isExist);
 		texPool = new TextureBatcher();
