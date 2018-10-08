@@ -7,7 +7,6 @@ ParticlePool::ParticlePool(ParticleType p_type, Texture2D& p_tex, string tex_nam
 	: type(p_type), texture(p_tex), texName(tex_name), sortNum(sort_num)
 {
 	batchNode = ParticleBatchNode::createWithTexture(&texture);
-
 	int i = 0;
 	protoType = new ParticleCustom*[sortNum];	//프로토타입 저장 배열 할당
 
@@ -82,8 +81,6 @@ void ParticlePool::pushParticle(int sort_idx)
 
 		//배치노드로부터, 필요한 frame 입힘
 		new_ruin->setTextureWithRect(&texture, frames.at(sort_idx)->getRectInPixels());
-		//new_ruin->setAnchorPoint(Vec2(0.5f, 0.5f));
-		//new_ruin->setScale(0.1f);
 		new_ruin->setDuration(0.1f);
 
 		batchNode->addChild(new_ruin);
@@ -104,7 +101,6 @@ void ParticlePool::popParticle()
 }
 
 
-
 void ParticlePool::pushToAvailableStack(int unit_idx)
 {
 	if (cursor == availableStack.size()) {
@@ -115,7 +111,6 @@ void ParticlePool::pushToAvailableStack(int unit_idx)
 	}
 	cursor++;
 }
-
 
 
 void ParticlePool::playParticleEffect(Point& world_pos)

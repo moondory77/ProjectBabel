@@ -11,14 +11,12 @@ enum ParticleType
 	RUIN_APARTMENT = 101,
 	RUIN_GOTHIC = 102,
 	RUIN_MYSTERY = 103,
-
 	SPARK = 201,
 };
 
 class ParticlePool;
 
-
-//파티클의 활성상태를 추적하기 위한 wrapping
+///파티클의 활성상태를 추적하기 위한 Wrapping Class
 class ParticleCustom : public ParticleSystemQuad
 {
 	friend class ParticlePool;
@@ -34,12 +32,14 @@ protected:
 public:
 
 	static ParticleCustom* create(const string& plist_name);
+	
 	ParticleCustom(const string& plist_name) : plistName(plist_name) {};
 	virtual ~ParticleCustom() {};
 
 	void setID(int id) { this->unitID = id; }
 	int getID() { return this->unitID; }
 
+	
 	virtual void setHost(ParticlePool* my_host) { this->host = my_host; }
 	ParticlePool* getHost() { return this->host; }
 	virtual ParticleCustom* spawnChild(int id);
@@ -47,8 +47,8 @@ public:
 	//stop 후, 다시 가용스택으로 옮기는 코드 삽입
 	virtual void updateParticleQuads() override;
 	virtual void resetSystem();
-
 };
+
 
 
 
@@ -64,8 +64,8 @@ public:
 	ParticleAnimation(const string& plist_name, int frame_cnt) : ParticleCustom(plist_name) {
 		animFrames.reserve(frame_cnt);
 	};
-
 	virtual ~ParticleAnimation() {};
+	
 
 	virtual void setHost(ParticlePool* my_host) {
 		this->host = my_host;
@@ -73,7 +73,6 @@ public:
 	};
 	virtual ParticleCustom* spawnChild(int id);
 	virtual void updateParticleQuads();
-
 };
 
 

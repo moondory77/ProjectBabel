@@ -8,10 +8,10 @@ ParticleCustom* ParticleCustom::create(const string& plist_name)
 	ParticleCustom* ret = new (nothrow)ParticleCustom(plist_name);
 
 	/*
-	파티클 plist로부터 init하면서, 여기에서 texture 정보도 캐쉬에 로드됨.
-	하지만 설계 상 오브젝트 생성 후,
-	따로 각 파티클에 다시 텍스쳐를 입히기에, 여기서 로드된 texture 캐쉬는 더미(용량 차지 안함)
-	ParticleDesigner로 만들 때, 편법으로 텍스쳐이름을 나중에 실제 사용할 텍스쳐 이름으로 지정해서 생성
+	파티클 plist로부터 init하면서 로드되는 텍스쳐는
+	파티클 위에 실제 입힐 텍스쳐와 동일한 이름으로 생성 후(Particle Designer에서), 
+	이름 변경하여 사용.
+	각 파티클의 텍스쳐들을 하나의 Sheet로 배치 처리하기 위한 우회방법
 	*/
 
 	if (ret && ret->initWithFile(plist_name)) {
@@ -20,13 +20,13 @@ ParticleCustom* ParticleCustom::create(const string& plist_name)
 	CC_SAFE_DELETE(ret);
 	return ret;
 }
+
 ParticleCustom* ParticleCustom::spawnChild(int id) {
 	auto child = this->create(plistName);
 	child->setHost(this->getHost());
 	child->setID(id);
 	return child;
 }
-
 void ParticleCustom::updateParticleQuads()
 {
 	ParticleSystemQuad::updateParticleQuads();
@@ -38,14 +38,11 @@ void ParticleCustom::updateParticleQuads()
 		}
 	}
 }
-
-
 void ParticleCustom::resetSystem()
 {
 	isRunning = true;
 	ParticleSystemQuad::resetSystem();
 }
-
 
 
 ParticleAnimation* ParticleAnimation::create(const string& plist_name, int frame_cnt)
@@ -58,6 +55,7 @@ ParticleAnimation* ParticleAnimation::create(const string& plist_name, int frame
 	CC_SAFE_DELETE(ret);
 	return ret;
 }
+
 ParticleCustom* ParticleAnimation::spawnChild(int id)
 {
 	auto child = this->create(plistName, animFrames.capacity());
@@ -65,8 +63,6 @@ ParticleCustom* ParticleAnimation::spawnChild(int id)
 	child->setID(id);
 	return child;
 }
-
-
 void ParticleAnimation::initFrames()
 {
 	auto p_name = plistName;
@@ -78,10 +74,8 @@ void ParticleAnimation::initFrames()
 		animFrames.pushBack(SpriteFrameCache::getInstance()->getSpriteFrameByName(p_name + StringUtils::format("_Frame_%d.png", i + 1)));
 	}
 }
-
 void ParticleAnimation::updateParticleQuads()
 {
-
 	if (isRunning) {
 		int cur_frame = animFrames.size() * (float)(_elapsed / _duration);
 		if (cur_frame < 1) cur_frame = 1;
