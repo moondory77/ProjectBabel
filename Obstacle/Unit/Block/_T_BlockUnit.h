@@ -26,12 +26,13 @@ protected:
 
 	int chunkID;				//(Container)빌딩 안에서의 묶음을 나타내는 ID
 	Point prevPos;				//(이전 프레임) world position
-	Vec2 prevRelativePos;		//(이전 프레임) unit <-> player 상대변위	
-	Vec2 curRelativePos;		//(갱신 프레임) unit <-> player 상대변위	
+
+	Vec2 prevRelativePos;		//(이전 프레임) unit <-> character 상대변위	
+	Vec2 curRelativePos;		//(갱신 프레임) unit <-> character 상대변위 	
 	float curRepulsion;			//unit 고유의 delta velocity
 
-	Vec2 crashVec;				//(갱신 프레임) unit의 delta 변위 벡터
-	float crashAngle;			//충돌직전, 캐릭터와의 상대위치 각도
+	Vec2 collisionVec;				//(충돌 발생 시) unit <-> hero collider 상대변위의 변화량(속도)
+	float collisionAngle;			//(충돌 발생 시) unit <-> heoro collider 충돌하는 각도
 
 	set<BlockUnit*> linkedUnit = {};	//연결되어 있는 다른 BlockUnit으로의 포인터
 	bool isDefensibleFlag;
@@ -42,9 +43,9 @@ protected:
 
 public:
 
-	BlockUnit();	
+	BlockUnit();
 	BlockUnit(const BlockUnit& blk) {};
-	
+
 	virtual ~BlockUnit() {};
 	bool isVisitable();
 	bool isSearchable(int chunk_id, const Point& pos);
@@ -52,9 +53,9 @@ public:
 	vector<int>& getUnitChunk();
 	int getChunkID() { return chunkID; };
 	void setChunkID(int id) { chunkID = id; }
-	Vec2 getCrashVec() { return crashVec; }
-	float getCrashAngle() { return crashAngle; }
-	
+	Vec2 getCollisionVec() { return collisionVec; }
+	float getCollisionAngle() { return collisionAngle; }
+
 
 	void setUser(Character* character) { this->mainChar = character; }
 	Character* getUser() { return mainChar; };
@@ -79,9 +80,9 @@ public:
 	bool isCrashed(Character& mainChar);
 
 
-	virtual void stateUpdate(float deltaTime);
-	virtual void positionUpdate(float deltaTime);	
-	
+	virtual void updateState(float deltaTime);
+	virtual void updatePosition(float deltaTime);
+
 
 	virtual void setPosition(Point pos);
 	virtual void setPositionX(float newX);

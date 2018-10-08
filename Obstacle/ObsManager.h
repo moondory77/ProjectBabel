@@ -18,16 +18,15 @@ class ObsManager : public CCNode
 private:
 	static bool isExist;
 	EntryQueue<BuildContainer*>* StandByEntry = NULL;
-	EntryQueue<BuildContainer*>* SpawningPool = NULL;	
+	EntryQueue<BuildContainer*>* SpawningPool = NULL;	//pool의 각 line의 첫번째 원소는 프로토타입
 	bool stageFinished;
 
 public:
 	const int ProtoNum;
 	virtual void onEnter();
-	vector<BuildContainer*>& ActiveList;
+	vector<BuildContainer*>& ActiveList;	//onGame 내 update 되는 장애물 리스트
 	void setProtoType(int target_line, BuildContainer& proto);
 	BuildContainer& getProtoType(int target_line);
-
 
 	ObsManager(int proto_num, vector<BuildContainer*>& active_list) : ProtoNum(proto_num), ActiveList(active_list)
 	{

@@ -2,53 +2,65 @@
 
 bool ObsBatchManager::isExist = false;
 
-ObsBatchUnit::ObsBatchUnit(Texture2D& tex, ObsTexType tex_type) : texType(tex_type)
-{	
-	batchNode = SpriteBatchNode::createWithTexture(&tex);
-	
-	//sprite frame들도 캐쉬에 로드
-	SpriteFrameCache::getInstance()->addSpriteFramesWithFile(StringUtils::format("Obstacles/Texture_%d.plist", (int)tex_type), &tex);
-	
-	for (int i = 0; i < 4; i++) {
-		auto unit_frame = SpriteFrameCache::getInstance()->getSpriteFrameByName(StringUtils::format("Frame_%d_%d.png", i, (int)tex_type));
-		texFrames.pushBack(unit_frame);
-	}
-	frameSize = texFrames.at(0)->getOriginalSize();
-};
 
-
-ObsBatchUnit::~ObsBatchUnit()
+ObsBatcher* ObsBatcher::createWithTexture(ObsTexType type, Texture2D* tex, ssize_t capacity)
 {
-	texFrames.clear();
-	auto tex = batchNode->getTexture();
-	SpriteFrameCache::getInstance()->removeSpriteFramesFromTexture(tex);
+	ObsBatcher* obs_batcher = new (std::nothrow) ObsBatcher(type, tex);
 
-	batchNode->removeFromParent();
-	batchNode->release();
-};
-
-
-
-void ObsBatchManager::initBatchUnit(ObsTexType obs_tex_type)
-{
-	if (BatchUnitTable.find(obs_tex_type) == BatchUnitTable.end())
-	{
-		//texture Pool에서 링크 끌어옴
-		Texture2D* tex_in_cache = texPool->joinTexLink(StringUtils::format("Obstacles/Texture_%d.png", (int)obs_tex_type));
-		BatchUnitTable.insert({ obs_tex_type , new ObsBatchUnit(*tex_in_cache, obs_tex_type)});
-		this->addChild(BatchUnitTable[obs_tex_type]->batchNode);
+	if (obs_batcher && obs_batcher->initWithTexture(tex, capacity)) {
+		obs_batcher->retain();
+		return obs_batcher;
 	}
+	delete obs_batcher;
+	return nullptr;
 }
 
 
-void ObsBatchManager::removeBatchUnit(ObsTexType obs_tex_type)
+ObsBatcher::ObsBatcher(ObsTexType type, Texture2D* tex)
 {
-	if (BatchUnitTable.find(obs_tex_type) != BatchUnitTable.end())
+	//texture로부터, Obstacle의 각 프레임을 나누어 저장
+	SpriteFrameCache::getInstance()->addSpriteFramesWithFile(StringUtils::format("Obstacles/Texture_%d.plist", (int)type), tex);
+
+	for (int i = 0; i < 4; i++) {
+		auto unit_frame = SpriteFrameCache::getInstance()->getSpriteFrameByName(StringUtils::format("Frame_%d_%d.png", i, (int)type));
+		unitFrame.pushBack(unit_frame);
+	}
+	unitSize = unitFrame.at(0)->getOriginalSize();
+};
+
+
+ObsBatcher::~ObsBatcher()
+{
+	unitFrame.clear();
+	SpriteFrameCache::getInstance()->removeSpriteFramesFromTexture(this->getTexture());
+};
+
+
+
+void ObsBatchManager::initObsBatcher(ObsTexType type)
+{
+	if (BatchTable.find(type) == BatchTable.end())
 	{
-		BatchUnitTable[obs_tex_type]->release();
-		BatchUnitTable.erase(obs_tex_type);
+		//texture Pool에서 링크 끌어옴
+		Texture2D* tex_in_cache = texPool->joinTexLink(StringUtils::format("Obstacles/Texture_%d.png", (int)type));
+
+		auto obs_batcher = ObsBatcher::createWithTexture(type, tex_in_cache);
+		if (obs_batcher != NULL) {
+			BatchTable.insert({ type , obs_batcher });
+			this->addChild(BatchTable[type]);
+		}
+	}
+}
+
+void ObsBatchManager::removeObsBatcher(ObsTexType type)
+{
+	if (BatchTable.find(type) != BatchTable.end())
+	{
+		BatchTable[type]->removeFromParent();
+		BatchTable[type]->release();
+		BatchTable.erase(type);
 
 		//texture Pool에서 링크 해제
-		texPool->detachTexLink(StringUtils::format("Obstacles/Texture_%d.png", (int)obs_tex_type));
+		texPool->detachTexLink(StringUtils::format("Obstacles/Texture_%d.png", (int)type));
 	}
 }

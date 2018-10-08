@@ -15,7 +15,7 @@ private:
 
 public:
 
-	DefaultBuilding(const ObsBatchUnit& batch_elem, Character& main_char, ParticlePool& ruins_pool);
+	DefaultBuilding(ObsBatcher& obs_batcher, Character& main_char, ParticlePool& ruins_pool);
 	DefaultBuilding(const BuildContainer& bld);
 
 	virtual ~DefaultBuilding() {
@@ -24,7 +24,7 @@ public:
 
 	void updateVelocity(float deltaTime);
 	virtual void update(float deltaTime) override;
-	
+
 	virtual BuildContainer& spawnChild(BuildContainer& mate) override;
 };
 

@@ -12,13 +12,13 @@ BlockUnit::BlockUnit()
 	//defenseID = 0;
 	specialID = 0;
 	curRepulsion = 0.0f;
-	isAliveFlag = true;
+	//isAliveFlag = true;
 	chunkID = 0;
 }
 
 
 //deltaTime에 대한 position Update
-void BlockUnit::positionUpdate(float deltaTime)
+void BlockUnit::updatePosition(float deltaTime)
 {
 	float repulsion_factor = getUnitChunk().size();
 	curRepulsion = repulsion_factor * repulsion_factor  * 0.008f;
@@ -44,53 +44,66 @@ void BlockUnit::positionUpdate(float deltaTime)
 	//충돌 발생 -> (Block - Character) X-Y 유효성 Filtering 후, Bounce Buffer에 저장
 	if (isCrashed(*mainChar))
 	{
-		//crash 직전 (충돌 시작)
+		//충돌 직전 상대변위 
 		prevRelativePos = this->prevPos - mainChar->getPrevPos();
-		//crash 직후 (충돌 감지)
-		curRelativePos = updated_pos - mainChar->getColliderPosition();
+		//충돌 직후 상대변위 
+		curRelativePos = updated_pos - mainChar->bodyCollider->getPosition();
 
-		//Crash 발생 동안의, delta Momentum을 구한다  
-		crashVec = curRelativePos - prevRelativePos;
-		crashAngle = CC_RADIANS_TO_DEGREES(ccpToAngle(mainChar->getPrevPos() - prevPos));
+		//충돌 중, Delta Momentum의 변화 측정
+		collisionVec = curRelativePos - prevRelativePos;
 
-		//캐릭터 콜라이더(AABB)의 가로-세로 사이각을 기준으로 둔 다음, X-Y축 필터링
-		auto body_size = mainChar->Collider.body->getBoundingBox().size;
-		float body_aspect_angle = CC_RADIANS_TO_DEGREES(ccpToAngle(Vec2(body_size.width, body_size.height)));
-		//CCLOG("body aspect angle is %.2f", body_aspect_angle);
+		//(직전 상대변위를 통해) 충돌각도 측정 
+		collisionAngle = CC_RADIANS_TO_DEGREES(ccpToAngle(mainChar->getPrevPos() - prevPos));
+		float body_aspect_angle = mainChar->bodyCollider->getBodyAngle();
 
-		//x축 유효 bounce
-		if ((-body_aspect_angle < crashAngle && crashAngle < body_aspect_angle)
-			|| ((180.0f - body_aspect_angle) < crashAngle && crashAngle <= 180.0f)
-			|| (-180.0f <= crashAngle && (crashAngle <= -180.0f + body_aspect_angle)))
+		// X축 충돌 감지 
+		if ((-body_aspect_angle < collisionAngle && collisionAngle < body_aspect_angle)
+			|| ((180.0f - body_aspect_angle) < collisionAngle && collisionAngle <= 180.0f)
+			|| (-180.0f <= collisionAngle && (collisionAngle <= -180.0f + body_aspect_angle)))
 		{
+			//if (mainChar->Collider.isCrashed[1] || mainChar->Collider.isCrashed[3]) {
 			container->bufferCrashX.push_back(unitIdx);
+			//}
 		}
-
-		//y축 유효 bounce
-		if ((body_aspect_angle < crashAngle && crashAngle < (180.0f - body_aspect_angle))
-			|| ((-180.0f + body_aspect_angle) < crashAngle && crashAngle < -body_aspect_angle))
-		{
+		// Y축 충돌 감지
+		else {
+			//if (mainChar->Collider.isCrashed[1] || mainChar->Collider.isCrashed[3])	{
+			//}
 			mainChar->addState(CRASH);
 			mainChar->setOuterVeloY(blk_delta_velo);
 			container->bufferCrashY.push_back(unitIdx);
 		}
+		mainChar->bodyCollider->clearCollider();
 
+		//// Y축 충돌 감지 
+		//if ((body_aspect_angle <= crashAngle && crashAngle <= (180.0f - body_aspect_angle))
+		//	|| ((-180.0f + body_aspect_angle) <= crashAngle && crashAngle <= -body_aspect_angle))
+		//{
+		//	if (mainChar->Collider.isCrashed[0] || mainChar->Collider.isCrashed[2]){
+		//		mainChar->addState(CRASH);
+		//		mainChar->setOuterVeloY(blk_delta_velo);
+		//		container->bufferCrashY.push_back(unitIdx);
+		//	}
+		//}
+		//// X축 충돌 감지
+		//else {
+		//	//if (mainChar->Collider.isCrashed[1] || mainChar->Collider.isCrashed[3])	{
+		//		container->bufferCrashX.push_back(unitIdx);
+		//	//}
+		//}
 	}
 	else
 	{
-		crashVec = Vec2::ZERO;
-		crashAngle = 0.0f;
+		collisionVec = Vec2::ZERO;
+		collisionAngle = 0.0f;
 	}
 }
 
 
-
-
-void BlockUnit::stateUpdate(float deltaTime)
+void BlockUnit::updateState(float deltaTime)
 {
 	//공격에 대한 update
-	if ((curStrength > 0)
-		&& (mainChar->getAttackID() != attackID)
+	if ((curStrength > 0) && (mainChar->getAttackID() != attackID)
 		&& mainChar->isAttack())
 	{
 		int damage = 0;
@@ -101,14 +114,19 @@ void BlockUnit::stateUpdate(float deltaTime)
 
 		if (damage = mainChar->chkAttackRadar(unit_boundary))
 		{
+			/*	if (damage > mainChar->getPowerNormal() * 0.75f)
+				{
+					container->ruinsPool.playParticleEffect(Point(unit_boundary.getMidX(), unit_boundary.getMidY()));
+				}*/
+
 			attackID = mainChar->getAttackID();
+
 			//데미지가 Block의 현재 체력 이상일 경우
 			if (curStrength < damage)
 				damage = curStrength;
 
 			curStrength -= damage;
 			container->frameDamage += damage;
-			//container->setDeltaVelocity(container->getDeltaVelocity() + 0.07f);
 
 			auto tint_in = TintTo::create(0.1f, Color3B::RED);
 			auto tint_out = TintTo::create(0.15f, Color3B::WHITE);
@@ -159,7 +177,6 @@ void BlockUnit::stateUpdate(float deltaTime)
 };
 
 
-
 vector<int>& BlockUnit::getUnitChunk()
 {
 	if (chunkID >= 0)
@@ -167,7 +184,6 @@ vector<int>& BlockUnit::getUnitChunk()
 	else
 		return container->getBufferChunk().at(-(chunkID + 1));
 }
-
 
 
 
@@ -188,17 +204,17 @@ bool BlockUnit::isCrashed(Character& main_char) {
 	auto unit_boundary = sprUnit->getBoundingBox();
 	bool isCrashedFlag = false;
 
-	if (unit_boundary.containsPoint(main_char.getTopPoint()))
-		isCrashedFlag = mainChar->Collider.isCrashed[0] = true;
+	if (unit_boundary.containsPoint(main_char.bodyCollider->getTopPostion()))
+		isCrashedFlag = main_char.bodyCollider->isCrashed[0] = true;
 
-	if (unit_boundary.containsPoint(mainChar->getRightPoint()))
-		isCrashedFlag = mainChar->Collider.isCrashed[1] = true;
+	if (unit_boundary.containsPoint(main_char.bodyCollider->getRightPosition()))
+		isCrashedFlag = main_char.bodyCollider->isCrashed[1] = true;
 
-	if (unit_boundary.containsPoint(mainChar->getBottomPoint()))
-		isCrashedFlag = mainChar->Collider.isCrashed[2] = true;
+	if (unit_boundary.containsPoint(main_char.bodyCollider->getBottomPosition()))
+		isCrashedFlag = main_char.bodyCollider->isCrashed[2] = true;
 
-	if (unit_boundary.containsPoint(mainChar->getLeftPoint()))
-		isCrashedFlag = mainChar->Collider.isCrashed[3] = true;
+	if (unit_boundary.containsPoint(main_char.bodyCollider->getLeftPosition()))
+		isCrashedFlag = main_char.bodyCollider->isCrashed[3] = true;
 
 	return isCrashedFlag;
 }
@@ -216,6 +232,7 @@ void BlockUnit::updateForDefense() {
 		mainChar->setOffStateInput(DEFENSE, TOUCH);
 	}
 }
+
 
 //범위 내에서 튕겨나가는지 여부 / 거리 반환
 float BlockUnit::isDefensibleRange() {

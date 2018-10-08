@@ -28,9 +28,7 @@ protected:
 	float unitLength;
 	float rigidFactor = 1.0f;	//(공격 시)경직효과를 내는 상수	
 	int brokenCnt;				// 깨진 unit 갯수
-
 	int frameDamage = 0;
-
 
 	/* 빌딩을 형성하는 블럭 배열 (row * col)
 	2차원 형태가 직관적이지만, 메모리 연속 저장을 위해 1차원 저장하여 2차원에 맵핑*/
@@ -59,15 +57,15 @@ protected:
 public:
 
 	virtual void onEnterTransitionDidFinish();	//addChild 완료 후 호출
-	BuildContainer(const ObsBatchUnit& batch_unit, Character& main_char, ParticlePool& ruins_pool);
+	BuildContainer(ObsBatcher& obs_batcher, Character& main_char, ParticlePool& ruins_pool);
 
 	virtual ~BuildContainer()
 	{
 		delete(bfsMainStack);
 		delete(bfsSubStack);
 		bufferChunkPositive.clear();
-		bufferChunkNegative.clear();	
-		if(blkArray != NULL)	delete[] blkArray;
+		bufferChunkNegative.clear();
+		if (blkArray != NULL)	delete[] blkArray;
 	};
 
 
@@ -95,7 +93,7 @@ public:
 	void dumpCrashBuffer();		//충돌 버퍼 일괄 처리
 	void dumpRemoveBuffer();	//파괴 버퍼 일괄 처리
 
-	
+
 	/*** chunking 관련 함수 ***/
 	bool getChunkingFinish() { return chunkingFinishFlag; };
 	void setChunkingFinish(bool flag) { chunkingFinishFlag = flag; }
@@ -113,13 +111,13 @@ public:
 	inline int get1DIndex(int row_idx, int col_idx) { return row_idx * numCol + col_idx; };
 	inline pair<int, int> get2DIndex(int linked_idx) { return pair<int, int> {linked_idx / numCol, linked_idx % numCol}; };
 	inline int getAliveUnitCnt() { return numRow * numCol - brokenCnt; };
-	
+
 	//현재 Phase에 맞는 Chunk Buffer 리턴
 	inline vector<vector<int>>& getBufferChunk() {
 		if (chunkingPhaseFlag)	return bufferChunkPositive;
 		else
 			return bufferChunkNegative;
-	}; 
+	};
 
 	virtual void update(float deltaTime) {};
 	virtual BuildContainer& spawnChild(BuildContainer& mate) = 0;

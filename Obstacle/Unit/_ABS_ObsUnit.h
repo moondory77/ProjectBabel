@@ -5,6 +5,13 @@
 USING_NS_CC;
 using namespace std;
 
+
+/*
+#issue
+unit 자체를 sprite 상속 클래스로 만들 경우,
+position update 시, unit의 포인터가 아닌 객체 자체가 스택에 올라가면서 오버플로우 발생
+렌더링 되는 파트를 나누어 따로 sprite로 만들어야 할 듯.
+*/
 class ObsUnit : public CCNode
 {
 private:
@@ -15,7 +22,7 @@ protected:
 	ObsUnit() {};
 	virtual ~ObsUnit() {};
 
-	Sprite* sprUnit;						
+	Sprite* sprUnit;	//유닛의 렌더링 부
 	Vector<SpriteFrame*> sprUnitFrames = {};
 
 public:
@@ -28,12 +35,12 @@ public:
 	float getRightX() { return sprUnit->getBoundingBox().getMaxX(); }
 	float getCenterX() { return sprUnit->getBoundingBox().getMidX(); }
 	float getCenterY() { return sprUnit->getBoundingBox().getMidY(); }
-	float getWidth() { return (sprUnit->getBoundingBox().getMaxX() - sprUnit->getBoundingBox().getMinX()); }
-	float getHeight() { return (sprUnit->getBoundingBox().getMaxY() - sprUnit->getBoundingBox().getMinY()); }
+	float getWidth() { return sprUnit->getBoundingBox().size.width; }
+	float getHeight() { return sprUnit->getBoundingBox().size.height; }
 
-	virtual void stateUpdate(float deltaTime) = 0;
-	virtual void positionUpdate(float deltaTime) = 0;	
-	
+	virtual void updateState(float deltaTime) = 0;
+	virtual void updatePosition(float deltaTime) = 0;
+
 
 	Point getPosition() { return Point(sprUnit->getBoundingBox().getMidX(), sprUnit->getBoundingBox().getMidY()); }
 	float getPositionX() { return sprUnit->getBoundingBox().getMidX(); }

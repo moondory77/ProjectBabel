@@ -3,9 +3,9 @@
 #include "VFX/EffectManager.h"
 
 
-/// 생성 0차 
-BuildContainer::BuildContainer(const ObsBatchUnit& batch_unit, Character& main_char, ParticlePool& ruins_pool)
-	: ObsContainer(batch_unit, main_char, ruins_pool)
+///생성자는 최대한 경량으로..
+BuildContainer::BuildContainer(ObsBatcher& obs_batcher, Character& main_char, ParticlePool& ruins_pool)
+	: ObsContainer(obs_batcher, main_char, ruins_pool)
 {
 	rigidFactor = 1.0f;
 	curVeloY = 0.0f;
@@ -18,17 +18,7 @@ BuildContainer::BuildContainer(const ObsBatchUnit& batch_unit, Character& main_c
 };
 
 
-void BuildContainer::onEnterTransitionDidFinish()
-{
-	if (!featuredFlag) {
-		buildBlocks(initPos);
-	}
-	isAliveFlag = true;		//해당 시점부터 update
-}
-
-
-
-/// 생성 1차 
+//구성 유닛의 scale과 갯수 확정
 void BuildContainer::setMold(float scale_factor, int row_num, int col_num)
 {
 	scaleFactor = scale_factor;
@@ -36,15 +26,15 @@ void BuildContainer::setMold(float scale_factor, int row_num, int col_num)
 	numCol = col_num;
 
 	//Row * Col에 맞춰 Building Texture에 crop해야 할 크기 계산
-	cropBlkSize.width = texBatchUnit.frameSize.width / numCol;
-	cropBlkSize.height = texBatchUnit.frameSize.height / numRow;
+	cropBlkSize.width = obsBatcher.unitSize.width / numCol;
+	cropBlkSize.height = obsBatcher.unitSize.height / numRow;
 
 	//유닛 Sprite 정사각형 scaling
-	unitScaleX = scaleFactor * (winSize().width / texBatchUnit.frameSize.width);
+	unitScaleX = scaleFactor * (winSize().width / obsBatcher.unitSize.width);
 	unitLength = scaleFactor * winSize().width / numCol;
 }
 
-/// 생성 2차 
+//인스턴스의 상세 specification 설정
 void BuildContainer::setSpec(float delta_g, float max_dt, float min_dt, int unit_stren)
 {
 	curGravity = delta_g;
@@ -54,16 +44,16 @@ void BuildContainer::setSpec(float delta_g, float max_dt, float min_dt, int unit
 };
 
 
-/// 생성 3차 
+//각 유닛 인스턴스 생성
 void BuildContainer::initBlkFrames()
 {
 	blkArray = new BlockUnit[numRow * numCol];
-	auto tex = texBatchUnit.batchNode->getTexture();
+	auto tex = obsBatcher.getTexture();
 
 	for (int i = 0; i < 4; i++)
 	{
 		//해당 강도의 건물프레임 기준좌표 (좌측 상단)
-		auto unit_frame = texBatchUnit.texFrames.at(i);
+		auto unit_frame = obsBatcher.unitFrame.at(i);
 		Point datum_pos = Point(unit_frame->getRect().getMinX(), unit_frame->getRect().getMinY());
 
 		for (int j = 0; j != numRow * numCol; j++)
@@ -81,7 +71,8 @@ void BuildContainer::initBlkFrames()
 	bfsSubStack = new vector<int>();
 }
 
-/// 생성 4차 완료
+
+//각 유닛을 순회하며, 상세 specification 설정 후, 렌더링 시작
 void BuildContainer::buildBlocks(Point& init_pos)
 {
 	for (int i = 0; i < numRow * numCol; i++)
@@ -90,27 +81,24 @@ void BuildContainer::buildBlocks(Point& init_pos)
 		int col_idx = get2DIndex(i).second;
 
 		blkArray[i].sprUnit = Sprite::create();
-
 		//각 블럭 스프라이트를 정사각형으로 강제 조절
 		blkArray[i].sprUnit->setScaleX(unitScaleX);
-		blkArray[i].sprUnit->setScaleY(unitScaleX * cropBlkSize.width / cropBlkSize.height);
-		///width_scaler * (cropBlkWidth / cropBlkHeight)
+		blkArray[i].sprUnit->setScaleY(unitScaleX * (cropBlkSize.width / cropBlkSize.height));
 
 		blkArray[i].sprUnit->setSpriteFrame(blkArray[i].sprUnitFrames.at(0));
 		blkArray[i].sprUnit->setAnchorPoint(Point(0, 1));
 		blkArray[i].sprUnit->setPosition(init_pos.x + unitLength * col_idx, init_pos.y - unitLength * row_idx);
 
-		//Batch Element의 batch_node 아래로 unit sprite 삽입
-		texBatchUnit.batchNode->addChild(blkArray[i].sprUnit);	///해당 시점부터 렌더링
+		//렌더링 sprite만 배치노드 아래로 삽입
+		obsBatcher.addChild(blkArray[i].sprUnit);	///해당 시점부터 렌더링
 
 		blkArray[i].isDefensibleFlag = true;
 		blkArray[i].maxStrength = this->unitStrength;
 		blkArray[i].curStrength = this->unitStrength;
-
 		blkArray[i].unitIdx = i;
 		blkArray[i].mainChar = &mainChar;
 		blkArray[i].container = this;
-
+		blkArray[i].isAliveFlag = true;
 
 		//상, 하, 좌, 우 Block과 연결 (기본 Chunk 설정)
 		static int row_num[] = { 1, 0, -1, 0 };
@@ -132,12 +120,22 @@ void BuildContainer::buildBlocks(Point& init_pos)
 }
 
 
+void BuildContainer::onEnterTransitionDidFinish()
+{
+	if (!featuredFlag) {
+		buildBlocks(initPos);
+	}
+	isAliveFlag = true;		//해당 시점부터 update
+}
+
 
 
 void BuildContainer::dumpCrashBuffer()
 {
-	mainChar.setColliderPosition(mainChar.getColliderPosition() + getCrashBounceVec());
-	mainChar.clearCollider();
+	mainChar.bodyCollider->setPosition(mainChar.bodyCollider->getPosition() + getCrashBounceVec());
+	//mainChar.setColliderPosition(mainChar.getColliderPosition() + getCrashBounceVec());
+
+	//mainChar.clearCollider();
 	if (!bufferCrashX.empty()) bufferCrashX.clear();
 	if (!bufferCrashY.empty()) bufferCrashY.clear();
 }
@@ -148,29 +146,21 @@ Vec2 BuildContainer::getCrashBounceVec()
 	float bounce_x = 0.0f;
 	float bounce_y = 0.0f;
 
-	//Y축 bounce를 적용시킬 지 여부 판단
-	if (mainChar.Collider.isCrashed[0] || mainChar.Collider.isCrashed[2])
+	for (auto iter = bufferCrashY.begin(); iter != bufferCrashY.end(); iter++)
 	{
-		for (auto iter = bufferCrashY.begin(); iter != bufferCrashY.end(); iter++)
-		{
-			//가장 변화량이 큰 y값 추출
-			if (fabsf(bounce_y) < fabsf(blkArray[*iter].getCrashVec().y))
-				bounce_y = blkArray[*iter].getCrashVec().y;
-		}
-	}
-	
-	//X축 bounce를 적용시킬 지 여부 판단
-	if (mainChar.Collider.isCrashed[1] || mainChar.Collider.isCrashed[3])
-	{
-		for (auto iter = bufferCrashX.begin(); iter != bufferCrashX.end(); iter++)
-		{
-			//가장 변화량이 큰 x값 추출
-			if (fabsf(bounce_x) < fabsf(blkArray[*iter].getCrashVec().x))
-				bounce_x = blkArray[*iter].getCrashVec().x;
-		}
+		//가장 변화량이 큰 y값 추출
+		if (fabsf(bounce_y) < fabsf(blkArray[*iter].getCollisionVec().y))
+			bounce_y = blkArray[*iter].getCollisionVec().y;
 	}
 
-	CCLOG("Bounce Vector (%.2f, %.2f)", bounce_x, bounce_y);
+	for (auto iter = bufferCrashX.begin(); iter != bufferCrashX.end(); iter++)
+	{
+		//가장 변화량이 큰 x값 추출
+		if (fabsf(bounce_x) < fabsf(blkArray[*iter].getCollisionVec().x))
+			bounce_x = blkArray[*iter].getCollisionVec().x;
+	}
+
+	//CCLOG("Bounce Vector (%.2f, %.2f)", bounce_x, bounce_y);
 	return Vec2(bounce_x, bounce_y);
 }
 

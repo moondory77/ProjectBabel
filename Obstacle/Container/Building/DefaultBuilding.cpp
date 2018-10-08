@@ -1,15 +1,15 @@
 #include "DefaultBuilding.h";
 
 
-DefaultBuilding::DefaultBuilding(const ObsBatchUnit& batch_elem, Character& main_char, ParticlePool& ruins_pool)
-	: BuildContainer(batch_elem, main_char, ruins_pool)
+DefaultBuilding::DefaultBuilding(ObsBatcher& obs_batcher, Character& main_char, ParticlePool& ruins_pool)
+	: BuildContainer(obs_batcher, main_char, ruins_pool)
 {
 	prevSpecialID = 0;
 	prevSpecialDamage = 0;
 };
 
 DefaultBuilding::DefaultBuilding(const BuildContainer& bld)
-	: BuildContainer(bld.texBatchUnit, bld.mainChar, bld.ruinsPool)
+	: BuildContainer(bld.obsBatcher, bld.mainChar, bld.ruinsPool)
 {
 	prevSpecialID = 0;
 	prevSpecialDamage = 0;
@@ -19,7 +19,7 @@ DefaultBuilding::DefaultBuilding(const BuildContainer& bld)
 void DefaultBuilding::update(float deltaTime)
 {
 	frameDamage = 0;
-	
+
 	//청크 재분류 필요시, 실행
 	if (!chunkingFinishFlag)
 		chunkBlocks();
@@ -33,8 +33,8 @@ void DefaultBuilding::update(float deltaTime)
 	{
 		if (blkArray[i].isAlive())
 		{
-			blkArray[i].positionUpdate(deltaTime);
-			blkArray[i].stateUpdate(deltaTime);
+			blkArray[i].updatePosition(deltaTime);
+			blkArray[i].updateState(deltaTime);
 		}
 	}
 
@@ -69,32 +69,27 @@ void DefaultBuilding::update(float deltaTime)
 	}
 
 
-	//유효데미지에 의한 경직효과
-	if ((frameDamage > 0) && (rigidFactor > 0.0f)) 
+	if (frameDamage > 0)
 	{
-		float rigid_time = frameDamage*0.001f;
-		if (rigid_time > 0.16f)
-			rigid_time = 0.16f;
-
-		if (rigid_time > 0.09f)
+		//유효데미지에 의한 경직효과
+		if (rigidFactor > 0.0f)
 		{
-			CCLOG("start rigid");
-			rigidFactor = 0.0f;
 
-			auto delay = DelayTime::create(rigid_time);
-			auto rigid_in_attack
-				= Sequence::create(delay, 
-					CallFunc::create([&](){ rigidFactor = 1.0f; }), nullptr);
-			this->runAction(rigid_in_attack);
+			float rigid_time = frameDamage * 0.0013f;
+			if (rigid_time > 0.16f)
+				rigid_time = 0.16f;
+
+			if (rigid_time > 0.01f)
+			{
+				//CCLOG("enter the rigid time");
+				this->rigidFactor = 0.0f;
+				auto delay = DelayTime::create(rigid_time);
+				auto rigid_in_attack = Sequence::create(delay, CallFunc::create([&]() { this->rigidFactor = 1.0f; }), nullptr);
+				this->runAction(rigid_in_attack);
+			}
 		}
-		/*if ((frameDamage > 100)
-			&& (mainChar.getWpScale() < 0.4f))
-		{
-			mainChar.setWpScale(mainChar.getWpScale() * 1.3f);
-		}*/
+		mainChar.tickDamageHit += frameDamage;
 	}
-
-	mainChar.lapsedAtkScore += frameDamage;
 };
 
 
@@ -118,7 +113,8 @@ void DefaultBuilding::updateVelocity(float deltaTime)
 
 BuildContainer& DefaultBuilding::spawnChild(BuildContainer& mate)
 {
-	auto clone = new DefaultBuilding(mate.texBatchUnit, mainChar, ruinsPool);
+	//texture, row-col은 mate. 나머지 spec은 자신으로 새로운 개체 생성
+	auto clone = new DefaultBuilding(mate.obsBatcher, mainChar, ruinsPool);
 	clone->setMold(mate.getScaleFactor(), mate.getNumRow(), mate.getNumCol());
 	clone->setSpec(curGravity, maxVeloY, minVeloY, unitStrength);
 	return *clone;

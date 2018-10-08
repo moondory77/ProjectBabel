@@ -8,12 +8,12 @@ USING_NS_CC;
 using namespace std;
 
 //어떤 스케쥴러(이벤트 큐)에 의해 제어될 지 
-enum ObsMainType{
+enum ObsMainType {
 	BUILDING = 0, ORDEAL = 1, BOSS = 2
 };
 
 //어떤 텍스쳐를 매핑할 지..
-enum ObsTexType{
+enum ObsTexType {
 	COMPANY = 0,
 	APARTMENT = 1,
 	GOTHIC = 2,
@@ -25,20 +25,20 @@ enum ObsTexType{
 
 
 
-
-class ObsBatchUnit : public CCNode
+//타겟으로 하는 Obstacle의 텍스쳐를 batch drawing
+class ObsBatcher : public SpriteBatchNode
 {
-public :
+	static const int DEFAULT_CAPACITY = 29;
+public:
 
-	const ObsTexType texType;
-	Vector<SpriteFrame*> texFrames = {};
-	
-	Size frameSize = Size::ZERO;
-	SpriteBatchNode* batchNode = NULL;	//해당 텍스쳐를 렌더링하는 배치노드
-	
-	ObsBatchUnit(Texture2D& tex, ObsTexType tex_type);
-	~ObsBatchUnit();
+	static ObsBatcher* createWithTexture(ObsTexType type, Texture2D* tex, ssize_t capacity = DEFAULT_CAPACITY);
+	Vector<SpriteFrame*> unitFrame = {};
+	Size unitSize = Size::ZERO;	//장애물 오브젝트 하나의 기본 frame size
+
+	ObsBatcher(ObsTexType type, Texture2D* tex);
+	virtual ~ObsBatcher();
 };
+
 
 
 
@@ -47,35 +47,35 @@ class ObsBatchManager : public CCNode
 private:
 	static bool isExist;
 	TextureBatcher* texPool;
-	map<ObsTexType, ObsBatchUnit*> BatchUnitTable = {};	//(로드 된) 사용 할 obstacle의 리소스가 저장
+	map<ObsTexType, ObsBatcher*> BatchTable = {};	//(로드 된) 사용 할 obstacle의 리소스가 저장
 
 public:
 
+	//한번에 1개의 인스터스만 존재하게 강제
 	ObsBatchManager() {
 		assert(!isExist);
 		texPool = new TextureBatcher();
 		isExist = true;
 	}
+	~ObsBatchManager() {
 
-	~ObsBatchManager() {	
-		
-		while (!BatchUnitTable.empty()){
-			removeBatchUnit(BatchUnitTable.begin()->first);
+		while (!BatchTable.empty()) {
+			removeObsBatcher(BatchTable.begin()->first);
 		}
 		//CCLOG(TextureCache::getInstance()->getCachedTextureInfo().c_str());
 		texPool->release();
 		isExist = false;
 	};
 
-	void initBatchUnit(ObsTexType obs_tex_type);
-	void removeBatchUnit(ObsTexType obs_tex_type);
+	void initObsBatcher(ObsTexType obs_tex_type);
+	void removeObsBatcher(ObsTexType obs_tex_type);
 
-	const ObsBatchUnit* getBatchUnit(ObsTexType obs_tex_type) {
-		
-		if (BatchUnitTable.find(obs_tex_type) == BatchUnitTable.end()){
-			initBatchUnit(obs_tex_type);
+
+	ObsBatcher& getBatcher(ObsTexType obs_tex_type) {
+		if (BatchTable.find(obs_tex_type) == BatchTable.end()) {
+			initObsBatcher(obs_tex_type);
 		}
-		return BatchUnitTable[obs_tex_type];
+		return *BatchTable[obs_tex_type];
 	}
 
 };

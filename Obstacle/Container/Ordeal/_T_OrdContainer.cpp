@@ -2,13 +2,13 @@
 #include "random"
 
 
-OrdContainer::OrdContainer(Point init_pos, float scale_factor, const ObsBatchUnit& batch_unit, Character& player, ParticlePool& ruin_pool)
-	: ObsContainer(batch_unit, player, ruin_pool)
+OrdContainer::OrdContainer(Point init_pos, float scale_factor, ObsBatcher& obs_batcher, Character& player, ParticlePool& ruin_pool)
+	: ObsContainer(obs_batcher, player, ruin_pool)
 {
 	//initPosX = init_pos.x;
 	//initPosX = init_pos.y;
 	initPos = init_pos;
-	scaleFactor = scale_factor;	
+	scaleFactor = scale_factor;
 	//curDeltaVelocity = 0.0f;
 
 	//Obstacle(ObstacleType::DIAG_FRAGMENT, initPos, 1.f, 5, Point(1 / sqrt(2), -1 / sqrt(2)), parent)	

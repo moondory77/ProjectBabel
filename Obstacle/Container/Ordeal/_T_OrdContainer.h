@@ -10,13 +10,13 @@ using namespace std;
 
 class OrdContainer : public ObsContainer
 {
-private :
+private:
 
-protected :
+protected:
 
-public :
+public:
 
-	OrdContainer(Point init_pos, float scale_factor, const ObsBatchUnit& batch_unit, Character& player, ParticlePool& ruin_pool);	
+	OrdContainer(Point init_pos, float scale_factor, ObsBatcher& obs_batcher, Character& player, ParticlePool& ruin_pool);
 	virtual ~OrdContainer();
 
 

@@ -20,22 +20,22 @@ protected:
 	bool isAliveFlag = false;				//(생성 후)인스턴스의  여부 플래그
 	Point initPos = Point::ZERO;					//생성 위치
 	float scaleFactor = -1.0f;				//인스턴스의 크기(스크린 width 기준)
-	
+
 public:
 
-	ObsContainer(const ObsBatchUnit& batch_unit, Character& player, ParticlePool& ruins_pool) 
-		: texBatchUnit(batch_unit), mainChar(player), ruinsPool(ruins_pool) {};
-	
+	ObsContainer(ObsBatcher& batch_unit, Character& player, ParticlePool& ruins_pool)
+		: obsBatcher(batch_unit), mainChar(player), ruinsPool(ruins_pool) {};
+
 	~ObsContainer() {};
 
 	//생성 시 기본적으로 참조해야 할 정보
-	const ObsBatchUnit& texBatchUnit;
+	ObsBatcher& obsBatcher;
 	Character& mainChar;
 	ParticlePool& ruinsPool;
 
 	bool isAlive() { return isAliveFlag; }
 	float getScaleFactor() { return scaleFactor; }
-	
+
 	void setScaleFactor(float scale_factor) { this->scaleFactor = scale_factor; }
 	virtual void update(float deltaTime) = 0;
 
