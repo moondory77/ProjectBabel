@@ -11,7 +11,7 @@ void ParticleManager::createPool(ParticleType p_type, const char* tex_name, int 
 		//텍스쳐에 대한 참조링크 추가
 		Texture2D* tex_in_cache = texPool->joinTexLink("Particles/" + join_tex_address + ".png");
 
-		PoolTable.insert({ p_type, new ParticlePool(p_type, *tex_in_cache, join_tex_address, sort_num) });
+		PoolTable.insert({ p_type, new ParticlePool(*tex_in_cache, join_tex_address, sort_num) });
 		this->getParent()->addChild(PoolTable[p_type]->getBatchNode(), 10);
 	}
 }

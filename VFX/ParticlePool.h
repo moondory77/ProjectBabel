@@ -10,11 +10,13 @@ using namespace std;
 class ParticlePool : public CCNode
 {
 private:
-	const int sortNum;		//pool에 들어가는 파티클(plist) 종류	
 	const string texName;	//(texture 주소 참조를 위한) texture 파일명  
 	Texture2D& texture;
 
-	Vector<SpriteFrame*> frames = {};	//해당 Pool에 이용되는 종류별 파티클 프레임 저장
+	const int subNum;		//pool에 들어가는 파티클(plist) 종류 수
+	vector<Vector<SpriteFrame*>> subFrame = {};	//해당 Pool에 이용되는 종류별 파티클 프레임 저장
+	ParticleCustom** protoType;
+	ParticleBatchNode* batchNode = NULL;
 
 	struct {
 		int min;
@@ -22,20 +24,13 @@ private:
 		int cur;
 	}PoolSize;
 
-
-	ParticleBatchNode* batchNode = NULL;
-	ParticleCustom** protoType;
-
 	vector<ParticleCustom*> unitPool = {};			//전체 파티클 저장 목록
 	vector<int> availableStack = {};				//가용한 상태의 파티클의 인덱스목록												
 	int cursor;	//available pool의 top 인덱스 (availablePool의 (0 ~ top-1)위치의 파티클은 현재 사용가능)
 
-
 public:
-	const ParticleType type;
 
-
-	ParticlePool(ParticleType p_type, Texture2D& p_tex, string tex_name, int sort_num);
+	ParticlePool(Texture2D& p_tex, string tex_name, int elem_num);
 	~ParticlePool();
 
 	const string getTexName() { return texName; }
@@ -44,7 +39,7 @@ public:
 
 
 	//구성 파티클 원형을 pool에 장착
-	void setProtoType(initializer_list<ParticleCustom*> targets);
+	void setProtoType(ParticleCustom* target, int elem_idx, int frame_num);
 	void runSpawning(int min_size, int max_size);
 
 
@@ -56,7 +51,6 @@ public:
 	}
 
 	void pushToAvailableStack(int unit_idx);
-
 	void pushParticle(int sort_idx);
 	void popParticle();
 

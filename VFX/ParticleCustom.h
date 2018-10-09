@@ -16,7 +16,13 @@ enum ParticleType
 
 class ParticlePool;
 
-///파티클의 활성상태를 추적하기 위한 Wrapping Class
+
+/*
+추가 기능 
+1. 활성상태 추적
+2. animation frame 변환
+*/
+
 class ParticleCustom : public ParticleSystemQuad
 {
 	friend class ParticlePool;
@@ -24,8 +30,10 @@ class ParticleCustom : public ParticleSystemQuad
 protected:
 
 	const string plistName;		//개체 복사를 위해 필요한 Particle 주소
-	int unitID;					//고유 index (pool 내부에서)
+	Vector<SpriteFrame*>* subFrame;
 
+	int frameCnt;				//파티클 구성 frame 갯수
+	int unitID;					//고유 index (pool 내부에서)
 	ParticlePool* host;
 	bool isRunning = false;
 
@@ -39,40 +47,20 @@ public:
 	void setID(int id) { this->unitID = id; }
 	int getID() { return this->unitID; }
 
-	
-	virtual void setHost(ParticlePool* my_host) { this->host = my_host; }
+	void setHost(ParticlePool* my_host) { this->host = my_host; }
 	ParticlePool* getHost() { return this->host; }
-	virtual ParticleCustom* spawnChild(int id);
+
+	//구성 frame배열 포인터
+	void setSubFrame(Vector<SpriteFrame*>& p_frame) {
+		this->subFrame = &p_frame;
+		this->frameCnt = subFrame->size();
+	};	
+
+	ParticleCustom* spawnChild(int unit_id);
 
 	//stop 후, 다시 가용스택으로 옮기는 코드 삽입
 	virtual void updateParticleQuads() override;
 	virtual void resetSystem();
-};
-
-
-
-
-//프레임 애니메이션 효과를 동반하는 파티클 시스템
-class ParticleAnimation : public ParticleCustom
-{
-protected:
-	Vector<SpriteFrame*> animFrames = {};
-	void initFrames();
-public:
-
-	static ParticleAnimation* create(const string& plist_name, int frame_cnt);
-	ParticleAnimation(const string& plist_name, int frame_cnt) : ParticleCustom(plist_name) {
-		animFrames.reserve(frame_cnt);
-	};
-	virtual ~ParticleAnimation() {};
-	
-
-	virtual void setHost(ParticlePool* my_host) {
-		this->host = my_host;
-		initFrames();
-	};
-	virtual ParticleCustom* spawnChild(int id);
-	virtual void updateParticleQuads();
 };
 
 
