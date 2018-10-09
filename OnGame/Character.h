@@ -4,6 +4,7 @@
 #include "cocos2d.h"
 #include "OnGame/CollisionDetector.h"
 #include "OnGame/CustomAction.h"
+#include "VFX/ParticlePool.h"
 
 #define MOTION_ACTION 1001
 #define	WEAPON_ROT(a) (a+90.0f)
@@ -86,6 +87,7 @@ class Character : public Sprite
 		inline Vec2 getPosition() { return Point(getMidX(), getMidY()); }
 	};
 
+
 	//** 캐릭터 모션을 형성하는 3가지 (atomic action)을 하나로 바인딩
 	class AtomicMotionAction : public Node
 	{
@@ -115,8 +117,7 @@ class Character : public Sprite
 		{
 			if (skew_factor < 0.05f) skew_factor = 0.05f;
 			if (skew_factor > 3.0f) skew_factor = 3.0f;
-
-			CCLOG("skew factor is %.3f", skew_factor);
+			//CCLOG("skew factor is %.3f", skew_factor);
 
 			actionBody->setSkewFactor(skew_factor);
 			actionCircle->setSkewFactor(skew_factor);
@@ -151,7 +152,6 @@ private:
 	AtomicMotionAction motionAction;
 	CollisionDetector* weaponDetector;
 
-
 	/* 캐릭터 몸체를 구성하는 각 Sprite Part */
 	struct {
 		Sprite *Body;
@@ -159,7 +159,6 @@ private:
 		Sprite *WpHandle;
 		Sprite *WpBlade;
 	}BodyPart;
-
 
 	/* 인게임 내 각종 능력치 */
 	struct {
@@ -197,7 +196,7 @@ private:
 		//float extraAngle = 0.0f;
 	}atkScopeRadius;
 
-
+	//Attack Charging 시, 검의 크기 팽창에 따른 추가 각도 조절
 	struct {
 		float limitAngle = 5.0f;
 		float curAngle = 0;
@@ -208,6 +207,10 @@ private:
 		float curAngle = 0;
 	}ExtraWeaponRot;
 
+
+	struct {
+		ParticlePool* spark;
+	}EffectPool;
 
 	inline float OnCircleRot(float origin_wp_rot) { return origin_wp_rot + 90.0f; }
 
@@ -295,8 +298,6 @@ public:
 	int lapsedDamageHit = 0;
 	int tickDamageHit = 0;
 
-
-
 	float curDefPoint = 0;		///현재 방어 게이지
 	float curSpecPoint = 0;		///현재 필살기 게이지
 	float maxDefPoint = 5000;
@@ -318,6 +319,9 @@ public:
 
 	void setUICanvas(Layer* ui_canvas) { UICanvas = ui_canvas; };
 	Layer* getUICanvas() { return UICanvas; }
+
+	void setSparkPool(ParticlePool* spark_pool) { EffectPool.spark = spark_pool; }
+	ParticlePool* getSparkPool() { return EffectPool.spark; }
 
 	/* 캐릭터 모션/State 관련 함수 */
 	void initMotionFrames();							//캐릭터 액션 애니메이션에 필요한 프레임 삽입	

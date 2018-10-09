@@ -9,7 +9,7 @@ Character::BodyCollider::BodyCollider(float x_scale, float y_scale) {
 	assert(init());
 	this->setScale(x_scale, y_scale / winAspectRatio());
 	this->setColor(Color3B::BLUE);
-	this->setOpacity(0);
+	this->setOpacity(150);
 	this->ignoreAnchorPointForPosition(false);
 	this->setAnchorPoint(Vec2(0.5f, 0.5f));
 	bodyAngle = CC_RADIANS_TO_DEGREES(ccpToAngle(Vec2(getWidth(), getHeight())));
@@ -29,7 +29,7 @@ Character::Character(Point initPos, float gravity, float jumpVelocity, int power
 	assert(BodyPart.Body->initWithFile("motions/default_land/1.png"));
 	bodyScale = 0.108f;
 	BodyPart.Body->setScale(bodyScale * DivForHorizontal(this));
-	BodyPart.Body->setAnchorPoint(Vec2(0.5f, 0.4f));
+	BodyPart.Body->setAnchorPoint(Vec2(0.5f, 0.4f));	//콜라이더와의 위치 차 보정
 	BodyPart.Body->setPosition(initPos);
 
 	// sprCircle 
@@ -79,8 +79,9 @@ Character::Character(Point initPos, float gravity, float jumpVelocity, int power
 	BodyPart.Body->addChild(Radar.defense);
 
 
-	weaponDetector = new CollisionDetector("DefaultBlade.png", BodyPart.WpBlade, 40.0f);
+	weaponDetector = new CollisionDetector("DefaultBlade.png", BodyPart.WpBlade, 1.0f, 100.0f);
 	BodyPart.WpBlade->addChild(weaponDetector);
+
 	bodyCollider = new BodyCollider(bodyScale * 0.4f, bodyScale * 0.4f * sqrtf(3.0));
 	motionAction.setHost(this);
 
@@ -404,7 +405,6 @@ void Character::updatePosition(float deltaTime)
 			else
 				gravity = getGravity();
 
-
 			float delta_velocity = -gravity * gravity * gravity *0.25f * deltaTime + cur_velocity;
 			setVeloY(delta_velocity);
 			updated_pos.y += delta_velocity;
@@ -424,9 +424,10 @@ void Character::updatePosition(float deltaTime)
 	}
 
 }
+
 void Character::updateState(float deltaTime)
 {
-	//weaponDetector->drawOutline();
+	weaponDetector->drawOutline();
 
 	//Collider와 본체의 위치를 맞춰줌으로써, 이동 완료 
 	setPosition(bodyCollider->getPosition());
@@ -635,28 +636,36 @@ void Character::updateStateTransition()
 }
 
 
-
 int Character::chkAttackRadar(Rect& attackable_unit)
 {
-	Rect rough_outline = attackable_unit;
-	rough_outline.origin = BodyPart.WpBlade->convertToNodeSpace(attackable_unit.origin);
-	rough_outline.size.width /= (this->getScale() * BodyPart.WpHandle->getScale());
-	rough_outline.size.height /= (this->getScale() * BodyPart.WpHandle->getScale());
+	Rect trans_rect = attackable_unit;
+	trans_rect.origin = BodyPart.WpBlade->convertToNodeSpace(attackable_unit.origin);
+	trans_rect.size.width /= (this->getScale() * BodyPart.WpHandle->getScale());
+	trans_rect.size.height /= (this->getScale() * BodyPart.WpHandle->getScale());
 
-	//AABB 형태로 rough하게 먼저 탐지 후, 디테일한 boundary로 다시 충돌 감지
-	if (Radar.attack->getBoundingBox().intersectsRect(rough_outline))
+	/*
+	1) (공격 가용 범위) AABB 형태 Radar(Layer)로 1차 탐지(rough),
+	2) Radar 감지 후, 디테일한 boundary로 2차 탐지
+	*/
+	if (Radar.attack->getBoundingBox().intersectsRect(trans_rect))
 	{
-		Point center_pos = Point(attackable_unit.getMidX(), attackable_unit.getMidY());
-		///좌표, 스케일은 항상 world 기준으로 입력
-		if (weaponDetector->detectCollision(center_pos, attackable_unit.size.width / 2))
+		Point world_crash_pos = Point(attackable_unit.getMidX(), attackable_unit.getMidY());
+
+		///input 시, 좌표 & 스케일은 항상 world 기준
+		if (weaponDetector->detectCollision(world_crash_pos, attackable_unit.size.width / 2))
 		{
-			float atk_dist = (Point(rough_outline.getMidX(), rough_outline.getMidY()) - BodyPart.Circle->getPosition()).getLengthSq();
+			float atk_dist = (Point(trans_rect.getMidX(), trans_rect.getMidY()) - BodyPart.Circle->getPosition()).getLengthSq();
 			float max_dist = getWpHeight() * getWpHeight();
-			return AbilityStatus.powerNormal * (1 - atk_dist / max_dist);
+
+			if (tickDamageHit > 10) {
+				EffectPool.spark->playParticleEffect(world_crash_pos);
+			}
+			return AbilityStatus.powerNormal * 0.5f * (1 + atk_dist / max_dist);
 		}
 	}
 	return 0;
 };
+
 
 int Character::chkDefenseRadar(const Sprite& defensable)
 {
@@ -1352,7 +1361,6 @@ void Character::changeCharMotion(bool isAdd, CharStateType targetState)
 }
 
 
-
 //무기 Sprite와 그에따른 레이더의 크기 함께 Scale 
 void Character::setWpScale(float input_wp_scale) {
 
@@ -1371,9 +1379,8 @@ void Character::setWpScale(float input_wp_scale) {
 void Character::callback_tick_Hit(float deltaTime)
 {
 	motionAction.skewMotionSpeed(2.0f / (sqrtf(tickDamageHit) * 0.08f + 2.0f));
-	//CCLOG("cur tick damage is %d", tickDamageHit);
 	lapsedDamageHit += tickDamageHit;
-	tickDamageHit = 0;
+	tickDamageHit = 0;	//tick damage 전달 후, 초기화
 
 	lapsedTimeHit += deltaTime / (FRAME_DELAY * 0.9f * 8);
 	EffectManager::getInstance()->displayAtkScore(lapsedDamageHit, Point::ZERO, 2.0f, *UICanvas);
@@ -1382,7 +1389,6 @@ void Character::callback_tick_Hit(float deltaTime)
 	if (lapsedTimeHit > 1) {
 		lapsedTimeHit = 0.0f;
 		lapsedDamageHit = tickDamageHit = 0;
-		//atkScopeRadius.extraAngle = 0.0f;
 		Director::getInstance()->getScheduler()->unschedule(schedule_selector(Character::callback_tick_Hit), this);
 	}
 };
@@ -1394,8 +1400,6 @@ void Character::callback_tick_AtkCharge(float deltaTime)
 		auto updated_scale = WeaponScale.cur + 0.05f * deltaTime / 1.0f;
 		setWpScale(updated_scale);
 	}
-
-
 
 	if (ExtraCircleRot.curAngle < ExtraCircleRot.limitAngle)
 	{
