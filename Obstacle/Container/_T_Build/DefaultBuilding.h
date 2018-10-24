@@ -2,7 +2,7 @@
 #define __DEFAULT_BUILDING_H__
 
 #include "cocos2d.h"
-#include "Obstacle/Container/Building/_T_BuildContainer.h"
+#include "Obstacle/Container/_T_Build/_T_BuildContainer.h"
 
 USING_NS_CC;
 using namespace std;

@@ -24,10 +24,12 @@ void DefaultBuilding::update(float deltaTime)
 	if (!chunkingFinishFlag)
 		chunkBlocks();
 
+
 	//업데이트 전, 충돌 input 다시 초기화
 	mainChar.setOffStateInput(CRASH, 0);
 	//빌딩의 velocity를 업데이트
 	updateVelocity(deltaTime);
+
 
 	for (int i = 0; i < numRow*numCol; i++)
 	{
@@ -38,10 +40,55 @@ void DefaultBuilding::update(float deltaTime)
 		}
 	}
 
-	//각 bouce을 계산하여, Collider Position Optimizing
-	if (!bufferCrashX.empty() || !bufferCrashY.empty()) {
-		dumpCrashBuffer();
+
+	////각 bouce을 계산하여, Collider Position Optimizing
+	
+	
+	if (!bufferCrash[0].empty() || !bufferCrash[1].empty())
+	{
+		Vec2 body_bounce = Vec2::ZERO;
+
+		//Crash Buffer 0 -> body collider와
+		if (!bufferCrash[0].empty())
+		{
+			body_bounce = getBounceVec(bufferCrash[0], mainChar.bodyCollider->getBoundingBox());
+			float blk_velo = getVeloY() + blkArray[0].getWeight();
+		
+			if (body_bounce.x != 0)
+				mainChar.setVeloX(mainChar.getVeloX()*0.9f);
+			
+			if (body_bounce.y < 0) {
+				mainChar.addState(CRASH);
+				mainChar.setOuterVeloY(blk_velo);
+			}
+			else if (body_bounce.y != 0) {
+				mainChar.setVeloY(blk_velo*0.9f);
+			}
+
+			//mainChar.bodyCollider->setPosition(mainChar.bodyCollider->getPosition() + bounce);
+			bufferCrash[0].clear();
+			CCLOG("body bounce (%.2f, %.2f)", body_bounce.x, body_bounce.y);
+		}
+
+		Vec2 wp_bounce = Vec2::ZERO;
+
+		//Crash Buffer 1 -> weapon과
+		if (!bufferCrash[1].empty())
+		{
+			wp_bounce = getBounceVec(bufferCrash[1], *mainChar.weaponDetector);
+			bufferCrash[1].clear();
+			CCLOG("weapon bounce (%.2f, %.2f)", wp_bounce.x, wp_bounce.y);
+
+		}
+
+		Vec2 total_bounce = Vec2::ZERO;
+		total_bounce.x = fabsf(body_bounce.x) > fabsf(wp_bounce.x) ? body_bounce.x : wp_bounce.x;
+		total_bounce.y = fabsf(body_bounce.y) > fabsf(wp_bounce.y) ? body_bounce.y : wp_bounce.y;
+
+		//CCLOG("Bounce Vector (%.2f, %.2f)", total_bounce.x, total_bounce.y);
+		mainChar.bodyCollider->setPosition(mainChar.bodyCollider->getPosition() + total_bounce);
 	}
+
 
 	//if (!bufferCrashDefense.empty())
 	//{

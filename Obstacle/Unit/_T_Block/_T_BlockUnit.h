@@ -23,23 +23,22 @@ protected:
 
 	BuildContainer* container;
 	Character* mainChar;
-
 	int chunkID;				//(Container)빌딩 안에서의 묶음을 나타내는 ID
-	Point prevPos;				//(이전 프레임) world position
+	
+	struct {
+		Vec2 prevPos;	//(이전 프레임) world position
+		Vec2 curPos;	//(현재 프레임) world position
+		pair<float, float> boundX;
+		pair<float, float> boundY;
+	}CrashInfo;
 
-	Vec2 prevRelativePos;		//(이전 프레임) unit <-> character 상대변위	
-	Vec2 curRelativePos;		//(갱신 프레임) unit <-> character 상대변위 	
-	float curRepulsion;			//unit 고유의 delta velocity
-
-	Vec2 collisionVec;				//(충돌 발생 시) unit <-> hero collider 상대변위의 변화량(속도)
-	float collisionAngle;			//(충돌 발생 시) unit <-> heoro collider 충돌하는 각도
-
+	Action* actionCrash = NULL;
 	set<BlockUnit*> linkedUnit = {};	//연결되어 있는 다른 BlockUnit으로의 포인터
 	bool isDefensibleFlag;
 	int maxStrength;
 	int curStrength;
 	int unitIdx;
-	//Point breakPos;
+	float curWeight;			//chunk의 구성유닛 수(낙하 가속도)
 
 public:
 
@@ -53,19 +52,14 @@ public:
 	vector<int>& getUnitChunk();
 	int getChunkID() { return chunkID; };
 	void setChunkID(int id) { chunkID = id; }
-	Vec2 getCollisionVec() { return collisionVec; }
-	float getCollisionAngle() { return collisionAngle; }
-
 
 	void setUser(Character* character) { this->mainChar = character; }
 	Character* getUser() { return mainChar; };
 	void setContainer(BuildContainer* host) { this->container = host; }
 	BuildContainer* getContainer() { return container; }
 
-
-	float getRepulsion() { return curRepulsion; }
-	void setRepulsion(float delta_repulsion) { this->curRepulsion = delta_repulsion; }
-
+	float getWeight() { return curWeight; }
+	void setWeight(float weight) { this->curWeight = weight; }
 
 	bool isDefensible() { return isDefensibleFlag; }
 	int getAttackID() { return this->attackID; }
@@ -84,7 +78,7 @@ public:
 	virtual void updatePosition(float deltaTime);
 
 
-	virtual void setPosition(Point pos);
+	virtual void setPosition(Vec2 pos);
 	virtual void setPositionX(float newX);
 	virtual void setPositionY(float newY);
 	virtual void breakSelf();

@@ -28,20 +28,18 @@ protected:
 public:
 
 	bool isAlive() { return this->isAliveFlag; };
-
 	float getTopY() { return sprUnit->getBoundingBox().getMaxY(); }
 	float getBottomY() { return sprUnit->getBoundingBox().getMinY(); }
 	float getLeftX() { return sprUnit->getBoundingBox().getMinX(); }
 	float getRightX() { return sprUnit->getBoundingBox().getMaxX(); }
-	float getCenterX() { return sprUnit->getBoundingBox().getMidX(); }
-	float getCenterY() { return sprUnit->getBoundingBox().getMidY(); }
+	float getMidX() { return sprUnit->getBoundingBox().getMidX(); }
+	float getMidY() { return sprUnit->getBoundingBox().getMidY(); }
 	float getWidth() { return sprUnit->getBoundingBox().size.width; }
 	float getHeight() { return sprUnit->getBoundingBox().size.height; }
 
 	virtual void updateState(float deltaTime) = 0;
 	virtual void updatePosition(float deltaTime) = 0;
-
-
+	
 	Point getPosition() { return Point(sprUnit->getBoundingBox().getMidX(), sprUnit->getBoundingBox().getMidY()); }
 	float getPositionX() { return sprUnit->getBoundingBox().getMidX(); }
 	float getPositionY() { return sprUnit->getBoundingBox().getMidY(); }

@@ -3,13 +3,11 @@
 
 #include "cocos2d.h"
 #include "VFX/ParticleManager.h"
-#include "Obstacle/ObsBatchManager.h"
+#include "Obstacle/ObsBatcher.h"
 #include "OnGame/Character.h"
-
 
 USING_NS_CC;
 using namespace std;
-
 
 class ObsContainer : public CCNode
 {

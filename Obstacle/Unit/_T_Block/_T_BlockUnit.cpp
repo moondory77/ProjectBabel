@@ -1,8 +1,8 @@
 #include "_T_BlockUnit.h"
+#include "Obstacle/Container/_T_Build/_T_BuildContainer.h"
 #include "System/GameManager.h"
 #include "OnGame/JoyController.h"
 #include "OnGame/Character.h"
-#include "Obstacle/Container/Building/_T_BuildContainer.h"
 
 
 BlockUnit::BlockUnit()
@@ -11,111 +11,126 @@ BlockUnit::BlockUnit()
 	attackID = 0;
 	//defenseID = 0;
 	specialID = 0;
-	curRepulsion = 0.0f;
+	curWeight = 0.0f;
 	//isAliveFlag = true;
 	chunkID = 0;
+}
+
+//캐릭터와의 접촉면적 발생 시, 리턴
+bool BlockUnit::isCrashed(Character& main_char) {
+
+	return sprUnit->getBoundingBox().intersectsRect(main_char.bodyCollider->getBoundingBox());
+
+	//auto unit_boundary = sprUnit->getBoundingBox();
+	//bool isCrashedFlag = false;
+	//if (unit_boundary.containsPoint(main_char.bodyCollider->getTopPostion()))
+	//	isCrashedFlag = main_char.bodyCollider->isCrashed[0] = true;
+	//if (unit_boundary.containsPoint(main_char.bodyCollider->getRightPosition()))
+	//	isCrashedFlag = main_char.bodyCollider->isCrashed[1] = true;
+	//if (unit_boundary.containsPoint(main_char.bodyCollider->getBottomPosition()))
+	//	isCrashedFlag = main_char.bodyCollider->isCrashed[2] = true;
+	//if (unit_boundary.containsPoint(main_char.bodyCollider->getLeftPosition()))
+	//	isCrashedFlag = main_char.bodyCollider->isCrashed[3] = true;
+	//return isCrashedFlag;
 }
 
 
 //deltaTime에 대한 position Update
 void BlockUnit::updatePosition(float deltaTime)
 {
-	float repulsion_factor = getUnitChunk().size();
-	curRepulsion = repulsion_factor * repulsion_factor  * 0.008f;
+	float weight_factor = getUnitChunk().size();
+	curWeight = pow(weight_factor, 2) * 0.008f;
 
-	if (curRepulsion < -5.0f) curRepulsion = -5.0f;
-	if (curRepulsion > 5.0f) curRepulsion = 5.0f;
+	if (curWeight < -5.0f) curWeight = -5.0f;
+	if (curWeight > 5.0f) curWeight = 5.0f;
 
 	//업데이트 전, position 버퍼링
 	Point cur_pos = getPosition();
 	Point updated_pos = cur_pos;
 
 	//Building 전체의 가속력 + Block 개별의 반발력(Repulsion)
-	auto blk_delta_velo = container->getVeloY() + curRepulsion;
+	auto blk_delta_velo = container->getVeloY() + curWeight;
 
 	if (container->rigidFactor == 1.0f)
 		updated_pos.y += blk_delta_velo * container->rigidFactor;
 
-	//position 일괄 업데이트 
-	prevPos = cur_pos;
+	//블록의 update 전/후 위치를 갱신
+	CrashInfo.prevPos = cur_pos;
 	setPosition(updated_pos);
-
 
 	//충돌 발생 -> (Block - Character) X-Y 유효성 Filtering 후, Bounce Buffer에 저장
 	if (isCrashed(*mainChar))
 	{
-		//충돌 직전 상대변위 
-		prevRelativePos = this->prevPos - mainChar->getPrevPos();
-		//충돌 직후 상대변위 
-		curRelativePos = updated_pos - mainChar->bodyCollider->getPosition();
-
-		//충돌 중, Delta Momentum의 변화 측정
-		collisionVec = curRelativePos - prevRelativePos;
-
-		//(직전 상대변위를 통해) 충돌각도 측정 
-		collisionAngle = CC_RADIANS_TO_DEGREES(ccpToAngle(mainChar->getPrevPos() - prevPos));
-		float body_aspect_angle = mainChar->bodyCollider->getBodyAngle();
-
-		// X축 충돌 감지 
-		if ((-body_aspect_angle < collisionAngle && collisionAngle < body_aspect_angle)
-			|| ((180.0f - body_aspect_angle) < collisionAngle && collisionAngle <= 180.0f)
-			|| (-180.0f <= collisionAngle && (collisionAngle <= -180.0f + body_aspect_angle)))
-		{
-			//if (mainChar->Collider.isCrashed[1] || mainChar->Collider.isCrashed[3]) {
-			container->bufferCrashX.push_back(unitIdx);
-			//}
-		}
-		// Y축 충돌 감지
-		else {
-			//if (mainChar->Collider.isCrashed[1] || mainChar->Collider.isCrashed[3])	{
-			//}
-			mainChar->addState(CRASH);
-			mainChar->setOuterVeloY(blk_delta_velo);
-			container->bufferCrashY.push_back(unitIdx);
-		}
-		mainChar->bodyCollider->clearCollider();
-
-		//// Y축 충돌 감지 
-		//if ((body_aspect_angle <= crashAngle && crashAngle <= (180.0f - body_aspect_angle))
-		//	|| ((-180.0f + body_aspect_angle) <= crashAngle && crashAngle <= -body_aspect_angle))
-		//{
-		//	if (mainChar->Collider.isCrashed[0] || mainChar->Collider.isCrashed[2]){
-		//		mainChar->addState(CRASH);
-		//		mainChar->setOuterVeloY(blk_delta_velo);
-		//		container->bufferCrashY.push_back(unitIdx);
-		//	}
-		//}
-		//// X축 충돌 감지
-		//else {
-		//	//if (mainChar->Collider.isCrashed[1] || mainChar->Collider.isCrashed[3])	{
-		//		container->bufferCrashX.push_back(unitIdx);
-		//	//}
-		//}
+		//(충돌 발생 시) unit의 x/y축 boundary 좌표값 저장
+		CrashInfo.boundX = { getLeftX(), getRightX() };
+		CrashInfo.boundY = { getBottomY(), getTopY() };
+	
+		//인덱스를 crash buffer에 등록
+		container->bufferCrash[0].insert(unitIdx);
 	}
-	else
+
+	auto world_blk_pos = sprUnit->getParent()->convertToWorldSpace(getPosition());
+
+	if (mainChar->weaponDetector->detectCollision(world_blk_pos, getWidth()/2))
 	{
-		collisionVec = Vec2::ZERO;
-		collisionAngle = 0.0f;
+		////(충돌 발생 시) unit의 x/y축 boundary 좌표값 저장
+		CrashInfo.boundX = { getLeftX(), getRightX() };
+		CrashInfo.boundY = { getBottomY(), getTopY() };
+
+		container->bufferCrash[1].insert(unitIdx);
+
+		///-> world space로 변환 후,
+		//auto unit_boundary = sprUnit->getBoundingBox();
+		//unit_boundary.origin = sprUnit->getParent()->convertToWorldSpace(unit_boundary.origin);
+		//CrashInfo.boundX = { unit_boundary.getMinX(), unit_boundary.getMaxX()};
+		//CrashInfo.boundY = { unit_boundary.getMinY(), unit_boundary.getMaxY()};
+
+		//침투벡터의 방향
+		//Vec2 prev_relative_pos = CrashInfo.prevPos - mainChar->getPrevPos();
+		//Vec2 cur_relative_pos = CrashInfo.curPos - mainChar->bodyCollider->getPosition();
+		//Vec2 penetrate_direction = cur_relative_pos - prev_relative_pos;
+		//mainChar->weaponDetector->getPenetrateVec(penetrate_direction, unit_center, unit_boundary.size.width / 2);
+		//mainChar->bodyCollider->setPosition(mainChar->bodyCollider->getPosition() + mainChar->weaponDetector->getPenetrateVec(penetrate_direction, unit_center, unit_boundary.size.width / 2));
+
+		if (actionCrash == NULL)
+		{
+			auto tint_in = TintTo::create(0.2f, Color3B::BLUE);
+			auto tint_out = TintTo::create(0.15f, Color3B::WHITE);
+			//auto detect_act = Sequence::create(tint_in, tint_out, nullptr);
+			actionCrash = Sequence::create(tint_in, tint_out, nullptr);
+			//detect_act->setTag(111);
+			sprUnit->runAction(actionCrash);
+		}
 	}
+
 }
 
 
 void BlockUnit::updateState(float deltaTime)
 {
+	///-> world space로 변환 후,
+	auto unit_boundary = sprUnit->getBoundingBox();
+	unit_boundary.origin = sprUnit->getParent()->convertToWorldSpace(unit_boundary.origin);
+	Vec2 unit_center = Vec2(unit_boundary.getMidX(), unit_boundary.getMidY());
+	//Action* crash_act = NULL;
+
+
+
 	//공격에 대한 update
 	if ((curStrength > 0) && (mainChar->getAttackID() != attackID)
 		&& mainChar->isAttack())
 	{
 		int damage = 0;
 
-		///-> world space로 변환
+		///-> world space로 변환 후,
 		auto unit_boundary = sprUnit->getBoundingBox();
 		unit_boundary.origin = sprUnit->getParent()->convertToWorldSpace(unit_boundary.origin);
+		Vec2 unit_center = Vec2(unit_boundary.getMidX(), unit_boundary.getMidY());
 
-		if (damage = mainChar->chkAttackRadar(unit_boundary))
+
+		if (damage = mainChar->chkAttackRadar(unit_boundary) > 0)
 		{
-			/*	if (damage > mainChar->getPowerNormal() * 0.75f)
-				{
+			/*if (damage > mainChar->getPowerNormal() * 0.75f){
 					container->ruinsPool.playParticleEffect(Point(unit_boundary.getMidX(), unit_boundary.getMidY()));
 				}*/
 
@@ -128,9 +143,15 @@ void BlockUnit::updateState(float deltaTime)
 			curStrength -= damage;
 			container->frameDamage += damage;
 
-			auto tint_in = TintTo::create(0.1f, Color3B::RED);
-			auto tint_out = TintTo::create(0.15f, Color3B::WHITE);
-			sprUnit->runAction(Sequence::create(tint_in, tint_out, nullptr));
+			//if (actionCrash != NULL && !actionCrash->isDone())
+			//{
+			sprUnit->stopAllActions();
+			sprUnit->setColor(Color3B::RED);
+			//}		
+			auto tint_in = TintTo::create(0.15f, Color3B::RED);
+			auto tint_out = TintTo::create(0.2f, Color3B::WHITE);
+			actionCrash = Sequence::create(tint_in, tint_out, nullptr);
+			sprUnit->runAction(actionCrash);
 
 			if (curStrength <= 0)
 			{
@@ -149,6 +170,8 @@ void BlockUnit::updateState(float deltaTime)
 			}
 		}
 	}
+
+
 	/*else if (mainChar->isSpcAttack()
 			&& mainChar->specialRadar->getBoundingBox().containsPoint(this->getPosition())) {
 			updateForSpecial();
@@ -190,34 +213,14 @@ vector<int>& BlockUnit::getUnitChunk()
 //Dead 처리된(remove 버퍼의 유닛)을 실제로 제거
 void BlockUnit::breakSelf()
 {
-	///왜 위치를 이렇게 지정해야 되지????? ㅠㅜ
-	Point breaking_pos = Point(sprUnit->getParent()->convertToWorldSpace(getPosition()).x, getPositionY());
-	container->ruinsPool.playParticleEffect(breaking_pos);
-
+	//Point breaking_pos = sprUnit->getParent()->convertToWorldSpace(getPosition());
+	//container->ruinsPool.playParticleEffect(breaking_pos);
 	sprUnit->removeFromParentAndCleanup(true);	//여기서 배치노드에서 삭제
 	sprUnit = NULL;
 };
 
 
-bool BlockUnit::isCrashed(Character& main_char) {
 
-	auto unit_boundary = sprUnit->getBoundingBox();
-	bool isCrashedFlag = false;
-
-	if (unit_boundary.containsPoint(main_char.bodyCollider->getTopPostion()))
-		isCrashedFlag = main_char.bodyCollider->isCrashed[0] = true;
-
-	if (unit_boundary.containsPoint(main_char.bodyCollider->getRightPosition()))
-		isCrashedFlag = main_char.bodyCollider->isCrashed[1] = true;
-
-	if (unit_boundary.containsPoint(main_char.bodyCollider->getBottomPosition()))
-		isCrashedFlag = main_char.bodyCollider->isCrashed[2] = true;
-
-	if (unit_boundary.containsPoint(main_char.bodyCollider->getLeftPosition()))
-		isCrashedFlag = main_char.bodyCollider->isCrashed[3] = true;
-
-	return isCrashedFlag;
-}
 
 
 void BlockUnit::updateForDefense() {
@@ -322,17 +325,21 @@ float BlockUnit::isSpecialRange()
 }
 
 
-void BlockUnit::setPosition(Point pos)
+void BlockUnit::setPosition(Vec2 pos)
 {
 	sprUnit->setPosition(pos + Vec2(-getWidth() / 2, getHeight() / 2));
+	CrashInfo.curPos = pos;
 }
 void BlockUnit::setPositionX(float newX)
 {
 	sprUnit->setPositionX(newX - getWidth() / 2);
+	CrashInfo.curPos.x = newX;
+
 }
 void BlockUnit::setPositionY(float newY)
 {
 	sprUnit->setPositionY(newY + getHeight() / 2);
+	CrashInfo.curPos.y = newY;
 }
 
 

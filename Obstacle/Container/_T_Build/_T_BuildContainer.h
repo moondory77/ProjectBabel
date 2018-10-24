@@ -3,7 +3,8 @@
 
 #include "cocos2d.h"
 #include "Obstacle/Container/_ABS_ObsContainer.h"
-#include "Obstacle/Unit/Block/_T_BlockUnit.h"
+#include "Obstacle/Unit/_T_Block/_T_BlockUnit.h"
+#include "OnGame/CollisionDetector.h"
 
 USING_NS_CC;
 using namespace std;
@@ -37,8 +38,8 @@ protected:
 	/****** ObsUnit 구성요소를 Container로 일괄 처리하기 위한 이중버퍼 *******/
 	vector<int> bufferRemove = {};
 	vector<int> bufferCrashDefense = {};
-	vector<int> bufferCrashX = {};
-	vector<int> bufferCrashY = {};
+	
+	set<int> bufferCrash[2];
 
 	//BFS에 사용되는 두개의 스택
 	vector<int>* bfsMainStack = NULL;
@@ -53,6 +54,13 @@ protected:
 	int chunkingCnt;			// (1 프레임 중) 몇개의 블록을 분류했는지 (DFS 호출횟수에 따라)
 	int curChunkID;				// (1 프레임 중) 가장 최근 발급된 id
 
+
+	inline void updateBound(pair<float, float>& getter, pair<float, float>& setter) {
+		if (getter.first > setter.first)
+			getter.first = setter.first;
+		if (getter.second < setter.second)
+			getter.second = setter.second;
+	}
 
 public:
 
@@ -88,11 +96,13 @@ public:
 	int getBrokenCnt() { return this->brokenCnt; };
 	void getRigidTime(float frame_damage);
 
+	
+	//충돌 시 발생하는, penetrate vector를 반환
+	Vec2 getBounceVec(set<int>& unit_buffer, Rect& bounding_box);	
+	Vec2 getBounceVec(set<int>& unit_buffer, CollisionDetector& collider);
+	
 
-	Vec2 getCrashBounceVec();	//충돌 시 발생하는 캐릭터 bounce를 vec2로 리턴
-	void dumpCrashBuffer();		//충돌 버퍼 일괄 처리
 	void dumpRemoveBuffer();	//파괴 버퍼 일괄 처리
-
 
 	/*** chunking 관련 함수 ***/
 	bool getChunkingFinish() { return chunkingFinishFlag; };
